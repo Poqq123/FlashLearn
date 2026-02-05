@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Flashcard App</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Flashcard Quiz</h1>
+        </header>
+
+        <div class="card-creation">
+            <div class="input-group">
+                <label for="question">Question</label>
+                <textarea id="question" placeholder="Enter question here..."></textarea>
+            </div>
+            <div class="input-group">
+                <label for="answer">Answer</label>
+                <textarea id="answer" placeholder="Enter answer here..."></textarea>
+            </div>
+            <button id="save-btn" onclick="addFlashcard()">Save Flashcard</button>
+        </div>
+
+        <div class="flashcard-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="card-inner" id="card-inner">
+                    <div class="card-front">
+                        <h2 id="card-question">Your Question Will Appear Here</h2>
+                    </div>
+                    <div class="card-back">
+                        <h2 id="card-answer">The Answer Will Appear Here</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button onclick="prevCard()">&#8592; Previous</button>
+                <span id="card-index">0 / 0</span>
+                <button onclick="nextCard()">Next &#8594;</button>
+            </div>
+            
+            <div class="actions">
+                <button class="edit-btn" onclick="editFlashcard()">Edit Current</button>
+                <button class="delete-btn" onclick="deleteFlashcard()">Delete Current</button>
+            </div>
+            
+            <p id="error-msg" class="error"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
