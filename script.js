@@ -166,7 +166,9 @@ async function deleteFlashcard() {
             throw new Error(`Server error: ${response.status}`);
         }
 
-        // 6. Success! Reload the list to remove the card from the screen
+        // 6. Success! Pop the current card out before refreshing the list
+        playCardAnimation('pop-out');
+        await wait(350);
         await fetchFlashcards();
         
         // Adjust the view so it doesn't show a blank space
@@ -233,13 +235,17 @@ async function editFlashcard() {
 
 function playCardAnimation(animationClass) {
     if (!flashcardElement) return;
-    flashcardElement.classList.remove('slide-left', 'slide-right', 'pop');
+    flashcardElement.classList.remove('slide-left', 'slide-right', 'pop', 'pop-out');
     void flashcardElement.offsetWidth;
     flashcardElement.classList.add(animationClass);
 }
 
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 flashcardElement?.addEventListener('animationend', () => {
-    flashcardElement.classList.remove('slide-left', 'slide-right', 'pop');
+    flashcardElement.classList.remove('slide-left', 'slide-right', 'pop', 'pop-out');
 });
 
 
