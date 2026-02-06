@@ -3,8 +3,36 @@ body {
     background: radial-gradient(circle at top, #f7f9ff, #eef1f7 55%, #e7ecf6);
     display: flex;
     justify-content: center;
+    align-items: center;
     min-height: 100vh;
     margin: 0;
+    padding: 24px;
+    position: relative;
+}
+
+.auth-controls {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    gap: 10px;
+    z-index: 10;
+}
+
+.login-btn {
+    background-color: #1b5e20;
+}
+
+.login-btn:hover {
+    background-color: #2e7d32;
+}
+
+.logout-btn {
+    background-color: #6b7280;
+}
+
+.logout-btn:hover {
+    background-color: #4b5563;
 }
 
 .container {
@@ -91,6 +119,10 @@ button:active {
     animation: popIn 0.5s ease;
 }
 
+.flashcard.pop-out {
+    animation: popOut 0.35s ease;
+}
+
 /* The container that actually flips */
 .card-inner {
     position: relative;
@@ -170,4 +202,10 @@ button:active {
     0% { transform: scale(0.96); opacity: 0.4; }
     60% { transform: scale(1.02); opacity: 1; }
     100% { transform: scale(1); }
+}
+
+@keyframes popOut {
+    0% { transform: scale(1); opacity: 1; }
+    60% { transform: scale(1.08); opacity: 0.7; }
+    100% { transform: scale(0.9); opacity: 0; }
 }
