@@ -1,6 +1,6 @@
 // script.js
 // PASTE YOUR CODESPACE URL HERE (No trailing slash)
-const API_URL = "https://super-duper-engine-x55qjqj94gj6cp5vw-8000.app.github.dev"; 
+const API_URL = "https://flashcardapp-pwic.onrender.com"; 
 
 let flashcards = [];
 let currentIndex = 0;
