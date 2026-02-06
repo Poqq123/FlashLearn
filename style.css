@@ -56,8 +56,6 @@ body {
     margin-bottom: 20px;
     border: 1px solid rgba(66, 133, 244, 0.12);
     width: 100%;
-    display: flex;
-    justify-content: center;
 }
 
 .add-btn {
@@ -70,10 +68,11 @@ body {
     font-weight: 700;
     line-height: 1;
     padding: 0;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: 0 12px 22px rgba(26, 115, 232, 0.3);
+    margin: 0 auto;
 }
 
 .add-btn:hover {
