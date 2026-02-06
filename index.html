@@ -64,10 +64,6 @@
             <h1>Flashcard Quiz</h1>
         </header>
 
-        <div class="card-creation">
-            <button id="save-btn" onclick="addFlashcard()">Add Flashcard</button>
-        </div>
-
         <div class="flashcard-container">
             <div class="flashcard" id="flashcard" onclick="flipCard()">
                 <div class="card-inner" id="card-inner">
@@ -79,6 +75,8 @@
                     </div>
                 </div>
             </div>
+
+            <button id="save-btn" class="add-btn" onclick="addFlashcard()" aria-label="Add flashcard">+</button>
 
             <div class="controls">
                 <button onclick="prevCard()">&#8592; Previous</button>

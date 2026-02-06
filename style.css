@@ -104,6 +104,7 @@ button:active {
 .flashcard-container {
     perspective: 1000px; /* Essential for 3D effect */
     width: 100%;
+    position: relative;
 }
 
 .flashcard {
@@ -186,6 +187,35 @@ button:active {
 .actions button {
     margin: 0 5px;
     font-size: 0.9rem;
+}
+
+.add-btn {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translate(50%, -50%);
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    padding: 0;
+    font-size: 2rem;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1f6fff;
+    box-shadow: 0 10px 20px rgba(31, 111, 255, 0.3);
+}
+
+.add-btn:hover {
+    background-color: #1b5ee0;
+    transform: translate(50%, -50%);
+    box-shadow: 0 10px 20px rgba(31, 111, 255, 0.35);
+}
+
+.add-btn:active {
+    transform: translate(50%, -50%) translateY(1px);
+    box-shadow: 0 6px 14px rgba(31, 111, 255, 0.25);
 }
 
 .delete-btn { background-color: #e53935; }
