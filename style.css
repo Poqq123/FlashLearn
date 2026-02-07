@@ -89,6 +89,14 @@ button:active {
     box-shadow: none;
 }
 
+.flashcard-row {
+    position: relative;
+    width: 560px;        /* FIX: Give it a real size so it doesn't collapse */
+    max-width: 90vw;     /* Safety for mobile screens */
+    margin: 0 auto;      /* Center it */
+    margin-bottom: 20px;
+}
+
 /* THE FLASHCARD (3D Flip Logic) */
 .flashcard-container {
     perspective: 1000px; /* Essential for 3D effect */
