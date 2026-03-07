@@ -139,12 +139,7 @@
 
             <div class="flashcard-container">
                 <p id="active-collection" class="active-collection">Showing: All Collections</p>
-                <div class="study-utility-actions">
-                    <a href="../quiz/quiz.html" class="study-page-link">Study Mode: Open Quiz & Performance</a>
-                    <button id="ai-generate-btn" class="study-page-link ai-generate-btn" type="button">
-                        Generate Flashcards with AI
-                    </button>
-                </div>
+                <a href="../quiz/quiz.html" class="study-page-link">Study Mode: Open Quiz & Performance</a>
 
                 <div class="flashcard-row">
                     <div class="flashcard" id="flashcard" onclick="flipCard()">
@@ -173,6 +168,15 @@
                 </div>
                 
                 <p id="error-msg" class="error"></p>
+
+                <button id="ai-generate-btn" class="ai-generate-btn" type="button" aria-label="Generate flashcards with AI">
+                    <span class="ai-generate-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" focusable="false">
+                            <path d="M12 2.8c.38 0 .72.24.84.6l1.38 4.1c.26.79.88 1.41 1.67 1.67l4.1 1.38a.89.89 0 0 1 0 1.68l-4.1 1.38a2.58 2.58 0 0 0-1.67 1.67l-1.38 4.1a.89.89 0 0 1-1.68 0l-1.38-4.1a2.58 2.58 0 0 0-1.67-1.67l-4.1-1.38a.89.89 0 0 1 0-1.68l4.1-1.38a2.58 2.58 0 0 0 1.67-1.67l1.38-4.1c.12-.36.46-.6.84-.6Zm7.14 12.86c.2 0 .39.13.45.33l.56 1.66c.15.45.5.8.95.95l1.66.56a.48.48 0 0 1 0 .9l-1.66.56c-.45.15-.8.5-.95.95l-.56 1.66a.48.48 0 0 1-.9 0l-.56-1.66a1.48 1.48 0 0 0-.95-.95l-1.66-.56a.48.48 0 0 1 0-.9l1.66-.56c.45-.15.8-.5.95-.95l.56-1.66c.06-.2.25-.33.45-.33Z"/>
+                        </svg>
+                    </span>
+                    <span class="ai-generate-label">Generate</span>
+                </button>
             </div>
         </div>
     </div>

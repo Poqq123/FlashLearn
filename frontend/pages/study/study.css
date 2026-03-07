@@ -658,9 +658,11 @@ body.dynamic-bg::after {
 }
 
 .flashcard-container {
+    position: relative;
     perspective: 1200px;
     width: 100%;
-    padding: 24px;
+    padding: 24px 24px 42px;
+    overflow: visible;
 }
 
 .active-collection {
@@ -670,19 +672,10 @@ body.dynamic-bg::after {
     text-align: center;
 }
 
-.study-utility-actions {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-}
-
 .study-page-link {
-    display: inline-flex;
+    display: flex;
     width: fit-content;
-    margin: 0;
+    margin: 0 auto 16px;
     align-items: center;
     justify-content: center;
     text-decoration: none;
@@ -709,16 +702,92 @@ body.dynamic-bg::after {
 }
 
 .ai-generate-btn {
-    background: linear-gradient(160deg, #8a5d16, #704408);
-    box-shadow: 0 10px 22px rgba(112, 68, 8, 0.28);
+    position: absolute;
+    right: 28px;
+    bottom: 55px;
+    min-width: 120px;
+    min-height: 46px;
+    padding: 4px 14px 4px 7px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    color: rgba(255, 251, 255, 0.98);
+    background:
+        linear-gradient(140deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.12)) padding-box,
+        linear-gradient(120deg, #84efff 0%, #67d7ff 42%, #4ea7ff 100%) border-box;
+    box-shadow:
+        0 18px 32px rgba(77, 165, 222, 0.22),
+        0 0 0 1px rgba(255, 255, 255, 0.24) inset,
+        0 0 26px rgba(127, 223, 255, 0.24);
+    backdrop-filter: blur(16px) saturate(1.14);
+    -webkit-backdrop-filter: blur(16px) saturate(1.14);
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 9px;
+    overflow: hidden;
+    z-index: 3;
 }
 
 .ai-generate-btn:hover {
-    box-shadow: 0 12px 24px rgba(112, 68, 8, 0.32);
+    transform: translateY(-2px) scale(1.01);
+    box-shadow:
+        0 20px 38px rgba(77, 165, 222, 0.28),
+        0 0 0 1px rgba(255, 255, 255, 0.28) inset,
+        0 0 32px rgba(143, 228, 255, 0.32);
+    filter: brightness(1.03);
 }
 
 .ai-generate-btn:active {
-    box-shadow: 0 6px 14px rgba(112, 68, 8, 0.22);
+    transform: translateY(1px) scale(0.992);
+    box-shadow:
+        0 10px 22px rgba(77, 165, 222, 0.2),
+        0 0 0 1px rgba(255, 255, 255, 0.22) inset,
+        0 0 16px rgba(127, 223, 255, 0.2);
+}
+
+.ai-generate-btn::before {
+    content: "";
+    position: absolute;
+    inset: 2px 14px auto;
+    height: 11px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0));
+    pointer-events: none;
+    opacity: 1;
+}
+
+.ai-generate-icon,
+.ai-generate-label {
+    position: relative;
+    z-index: 1;
+}
+
+.ai-generate-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0.14) 66%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.34),
+        0 8px 16px rgba(57, 139, 194, 0.14);
+}
+
+.ai-generate-icon svg {
+    width: 15px;
+    height: 15px;
+    fill: currentColor;
+}
+
+.ai-generate-label {
+    font-family: "Manrope", "Segoe UI", sans-serif;
+    font-size: 0.98rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.28);
 }
 
 .flashcard-row {
@@ -1182,10 +1251,6 @@ button:active {
         max-height: 260px;
     }
 
-    .study-utility-actions {
-        flex-direction: column;
-    }
-
 }
 
 @media (max-width: 768px) {
@@ -1229,7 +1294,7 @@ button:active {
     }
 
     .flashcard-container {
-        padding: 18px 14px 20px;
+        padding: 18px 14px 24px;
         border-radius: 20px;
     }
 
@@ -1311,6 +1376,21 @@ button:active {
     .modal-single-action {
         flex-direction: column;
         justify-content: stretch;
+    }
+
+    .ai-generate-btn {
+        position: static;
+        width: 100%;
+        min-width: 0;
+        margin-top: 18px;
+        min-height: 48px;
+        justify-content: center;
+        right: auto;
+        bottom: auto;
+    }
+
+    .ai-generate-label {
+        font-size: 0.98rem;
     }
 
     .ai-preview-header {
