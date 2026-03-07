@@ -121,6 +121,24 @@ body::after {
     gap: 8px;
 }
 
+.session-home-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.84);
+    color: var(--ink-2);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+.session-home-link:hover {
+    border-color: var(--line-strong);
+    box-shadow: var(--shadow-md);
+}
+
 button {
     border: 1px solid transparent;
     border-radius: 12px;

@@ -4,13 +4,50 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FlashLearn</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      font-family: "Manrope", "Segoe UI", sans-serif;
+      color: #211c15;
+      background: linear-gradient(160deg, #f6efe3, #eadfce 56%, #ddd1c0);
+    }
+
+    p {
+      margin: 0;
+      font-size: 0.98rem;
+      color: rgba(33, 28, 21, 0.72);
+    }
+  </style>
 </head>
 <body>
-  <script>
-    const target = new URL("./frontend/pages/study/index.html", window.location.href);
-    target.search = window.location.search;
-    target.hash = window.location.hash;
-    window.location.replace(target.toString());
+  <p>Opening FlashLearn…</p>
+  <script src="./frontend/shared/js/app-core.js"></script>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const core = window.FlashLearnCore;
+    const homeUrl = new URL("./home.html", window.location.href);
+    const studyUrl = new URL("./frontend/pages/study/index.html", window.location.href);
+
+    if (!core) {
+      window.location.replace(homeUrl.toString());
+    } else {
+      const { CONFIG, bootstrapSession } = core;
+      const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+      try {
+        const { session } = await bootstrapSession(supabase, {
+          hydrateHashTokens: true,
+          syncAvatar: true,
+        });
+        window.location.replace(session?.user ? studyUrl.toString() : homeUrl.toString());
+      } catch (_error) {
+        window.location.replace(homeUrl.toString());
+      }
+    }
   </script>
 </body>
 </html>

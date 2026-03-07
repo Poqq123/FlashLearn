@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FlashLearn Home</title>
+  <meta
+    name="description"
+    content="FlashLearn helps students organize flashcards into collections, practice with quizzes, and track progress over time."
+  />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./frontend/pages/home/home.css" />
+</head>
+<body>
+  <div class="site-shell">
+    <header class="topbar">
+      <a class="brand" href="./home.html" aria-label="FlashLearn home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img" focusable="false">
+            <rect x="11" y="12" width="30" height="22" rx="4"></rect>
+            <rect x="18" y="19" width="30" height="22" rx="4"></rect>
+            <path d="M24 26h13"></path>
+            <path d="M24 32h10"></path>
+            <path d="M41 42l9-9"></path>
+            <path d="M45 19l6 6"></path>
+            <path d="M37 46l3-8 5 5-8 3z"></path>
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong>FlashLearn</strong>
+          <span>Focused study, faster recall.</span>
+        </span>
+      </a>
+
+      <nav class="topbar-actions" aria-label="Primary">
+        <a class="nav-link" href="#features">Features</a>
+        <a class="nav-link" href="#how-it-works">How it works</a>
+        <a class="button button-ghost" href="./login.html?next=../study/index.html">Log In</a>
+        <a class="button button-primary" id="header-cta" href="./login.html?next=../study/index.html">Sign Up Free</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Study workflow for class-by-class review</p>
+          <h1>Give your flashcards a real home before the quiz starts.</h1>
+          <p class="hero-text">
+            FlashLearn keeps cards organized by collection, turns them into practice sessions, and tracks progress so
+            you know what needs another pass.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary button-large" id="hero-primary-cta" href="./login.html?next=../study/index.html">
+              Continue with Google
+            </a>
+            <a class="button button-secondary button-large" id="hero-secondary-cta" href="./frontend/pages/study/index.html">
+              Explore the Study App
+            </a>
+          </div>
+
+          <dl class="hero-metrics" aria-label="Product highlights">
+            <div>
+              <dt>Collections</dt>
+              <dd>Keep every course, unit, or exam topic separate.</dd>
+            </div>
+            <div>
+              <dt>Quiz Modes</dt>
+              <dd>Review cards or jump into focused pop-quiz sessions.</dd>
+            </div>
+            <div>
+              <dt>Progress</dt>
+              <dd>Track mastery, streaks, and review accuracy over time.</dd>
+            </div>
+          </dl>
+        </div>
+
+        <aside class="hero-preview" aria-label="FlashLearn preview">
+          <div class="preview-window">
+            <div class="preview-chrome">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+
+            <div class="preview-body">
+              <div class="preview-panel preview-panel-sidebar">
+                <p class="preview-label">Collections</p>
+                <div class="collection-pill is-active">Biology 101</div>
+                <div class="collection-pill">World History</div>
+                <div class="collection-pill">Spanish Vocab</div>
+              </div>
+
+              <div class="preview-panel preview-panel-main">
+                <p class="preview-label">Current Card</p>
+                <article class="flashcard-preview">
+                  <span class="flashcard-tag">Due now</span>
+                  <h2>What does ATP do in a cell?</h2>
+                  <p>Stores and transfers energy for cellular processes.</p>
+                </article>
+
+                <div class="preview-stats">
+                  <article>
+                    <strong>84%</strong>
+                    <span>Accuracy</span>
+                  </article>
+                  <article>
+                    <strong>42</strong>
+                    <span>Mastered</span>
+                  </article>
+                  <article>
+                    <strong>12</strong>
+                    <span>Reviewed today</span>
+                  </article>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section-block" id="features">
+        <div class="section-heading">
+          <p class="eyebrow">Why it works</p>
+          <h2>Built for the messy reality of studying.</h2>
+        </div>
+
+        <div class="feature-grid">
+          <article class="feature-card">
+            <span class="feature-kicker">Organize</span>
+            <h3>Separate cards by class, chapter, or exam.</h3>
+            <p>Create named collections so you can study one topic without dragging every card in your account with it.</p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-kicker">Practice</span>
+            <h3>Switch from browsing cards to active quiz mode.</h3>
+            <p>Move from passive review into answer-checking sessions when you need stronger recall under pressure.</p>
+          </article>
+
+          <article class="feature-card">
+            <span class="feature-kicker">Measure</span>
+            <h3>See what is sticking and what still needs work.</h3>
+            <p>Use progress stats and review history to find weak spots instead of guessing what to revisit next.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-block how-it-works" id="how-it-works">
+        <div class="section-heading">
+          <p class="eyebrow">How it works</p>
+          <h2>Start simple, then tighten the feedback loop.</h2>
+        </div>
+
+        <div class="steps-grid">
+          <article class="step-card">
+            <span class="step-number">01</span>
+            <h3>Sign in once</h3>
+            <p>Create your account with Google and keep your flashcards synced to your profile.</p>
+          </article>
+
+          <article class="step-card">
+            <span class="step-number">02</span>
+            <h3>Build collections</h3>
+            <p>Group cards by course or topic so each study session has a clear scope.</p>
+          </article>
+
+          <article class="step-card">
+            <span class="step-number">03</span>
+            <h3>Review and quiz</h3>
+            <p>Flip through cards, run quiz sessions, and rate outcomes to sharpen future reviews.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="cta-band" aria-labelledby="cta-title">
+        <div>
+          <p class="eyebrow">Ready to start?</p>
+          <h2 id="cta-title">Sign up now and turn scattered notes into a study system.</h2>
+        </div>
+        <div class="cta-band-actions">
+          <a class="button button-primary" id="footer-primary-cta" href="./login.html?next=../study/index.html">Sign Up</a>
+          <a class="button button-ghost" id="footer-secondary-cta" href="./login.html?next=../study/index.html">Log In</a>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./frontend/shared/js/app-core.js"></script>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+    const core = window.FlashLearnCore;
+    if (!core) {
+      throw new Error("FlashLearnCore failed to load.");
+    }
+
+    const { CONFIG, bootstrapSession, buildGoogleAuthorizeUrl } = core;
+    const studyPath = "./frontend/pages/study/index.html";
+    const loginNextPath = "../study/index.html";
+    const loginHref = `./login.html?next=${encodeURIComponent(loginNextPath)}`;
+    const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+    const headerCta = document.getElementById("header-cta");
+    const heroPrimaryCta = document.getElementById("hero-primary-cta");
+    const heroSecondaryCta = document.getElementById("hero-secondary-cta");
+    const footerPrimaryCta = document.getElementById("footer-primary-cta");
+    const footerSecondaryCta = document.getElementById("footer-secondary-cta");
+
+    const applyLoggedOutState = () => {
+      [headerCta, footerPrimaryCta, footerSecondaryCta].forEach((link) => {
+        if (!link) return;
+        link.href = loginHref;
+      });
+      if (headerCta) headerCta.textContent = "Sign Up Free";
+      if (heroPrimaryCta) heroPrimaryCta.href = loginHref;
+      if (heroSecondaryCta) heroSecondaryCta.textContent = "Explore the Study App";
+      if (footerPrimaryCta) footerPrimaryCta.textContent = "Sign Up";
+      if (footerSecondaryCta) footerSecondaryCta.textContent = "Log In";
+    };
+
+    const applyLoggedInState = () => {
+      const dashboardPath = new URL(studyPath, window.location.href).toString();
+      [headerCta, heroPrimaryCta, heroSecondaryCta, footerPrimaryCta, footerSecondaryCta].forEach((link) => {
+        if (!link) return;
+        link.href = dashboardPath;
+      });
+      if (headerCta) headerCta.textContent = "Open Dashboard";
+      if (heroPrimaryCta) heroPrimaryCta.textContent = "Open Study Dashboard";
+      if (heroSecondaryCta) heroSecondaryCta.textContent = "Jump into Study Mode";
+      if (heroSecondaryCta) heroSecondaryCta.href = new URL("./frontend/pages/quiz/quiz.html", window.location.href).toString();
+      if (footerPrimaryCta) footerPrimaryCta.textContent = "Open Dashboard";
+      if (footerSecondaryCta) footerSecondaryCta.textContent = "Open Quiz";
+      if (footerSecondaryCta) footerSecondaryCta.href = new URL("./frontend/pages/quiz/quiz.html", window.location.href).toString();
+    };
+
+    applyLoggedOutState();
+
+    try {
+      const { session } = await bootstrapSession(supabase, {
+        hydrateHashTokens: true,
+      });
+
+      if (session?.user) {
+        applyLoggedInState();
+      } else {
+        heroPrimaryCta?.addEventListener("click", (event) => {
+          event.preventDefault();
+          window.location.assign(buildGoogleAuthorizeUrl(studyPath));
+        });
+      }
+    } catch (error) {
+      console.error("Landing auth bootstrap failed:", error);
+      heroPrimaryCta?.addEventListener("click", (event) => {
+        event.preventDefault();
+        window.location.assign(loginHref);
+      });
+    }
+  </script>
+</body>
+</html>

@@ -207,6 +207,22 @@ body.dynamic-bg::after {
     color: #8f2f1f;
 }
 
+.home-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 12px;
+    color: var(--brand);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.home-link:hover,
+.home-link:focus-visible {
+    text-decoration: underline;
+    text-underline-offset: 0.16em;
+}
+
 .background-toggle-btn {
     position: fixed;
     top: 24px;
