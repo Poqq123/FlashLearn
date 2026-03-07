@@ -848,7 +848,7 @@ function resetAiGeneratorState(options = {}) {
     setModalError(aiGenerateError);
     if (!keepTopic) {
         if (aiTopicInput) aiTopicInput.value = "";
-        if (aiCountInput) aiCountInput.value = "12";
+        if (aiCountInput) aiCountInput.value = "10";
         if (aiCollectionNameInput) aiCollectionNameInput.value = "";
     }
     updateAiActionButtons();
@@ -924,8 +924,8 @@ function validateAiGenerationInput() {
     if (topic.length > 180) {
         return { error: "Topic must be 180 characters or fewer." };
     }
-    if (!Number.isInteger(count) || count < 3 || count > 24) {
-        return { error: "Choose between 3 and 24 cards." };
+    if (!Number.isInteger(count) || count < 3 || count > 10) {
+        return { error: "Choose between 3 and 10 cards." };
     }
     if (collectionName.length > 120) {
         return { error: "Collection name must be 120 characters or fewer." };

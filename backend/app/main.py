@@ -33,7 +33,7 @@ CARD_ANSWER_MAX_LENGTH = 960
 AI_TOPIC_MAX_LENGTH = 180
 AI_COLLECTION_NAME_MAX_LENGTH = 120
 AI_GENERATED_CARD_MIN_COUNT = 3
-AI_GENERATED_CARD_MAX_COUNT = 24
+AI_GENERATED_CARD_MAX_COUNT = 10
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
@@ -243,7 +243,7 @@ class CardProgressResetSchema(BaseModel):
 
 class AIGenerateCardsSchema(BaseModel):
     topic: str
-    count: int = 12
+    count: int = 10
     collection_name: Optional[str] = None
 
 
