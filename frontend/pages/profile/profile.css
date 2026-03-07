@@ -45,14 +45,27 @@ body.profile-loading .profile-main[hidden] {
     margin-bottom: 28px;
 }
 
-.topbar-link {
+.topbar-links {
     justify-self: start;
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.topbar-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     color: var(--ink-2);
     text-decoration: none;
     font-weight: 600;
+}
+
+.topbar-link-secondary {
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: rgba(255, 255, 255, 0.62);
 }
 
 .topbar-link svg {
@@ -357,8 +370,9 @@ body.profile-loading .profile-main[hidden] {
         row-gap: 12px;
     }
 
-    .topbar-link {
+    .topbar-links {
         grid-area: back;
+        gap: 8px;
     }
 
     .brand {
