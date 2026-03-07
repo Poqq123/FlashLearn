@@ -22,6 +22,10 @@ let editingCardId = null;
 let editingCollectionId = null;
 let pendingConfirmAction = null;
 let pendingWelcomeContinue = null;
+let aiGeneratedCards = [];
+let aiGeneratedCollectionName = "";
+let aiGenerationInFlight = false;
+let aiSaveInFlight = false;
 
 const cardQuestion = document.getElementById("card-question");
 const cardAnswer = document.getElementById("card-answer");
@@ -64,6 +68,20 @@ const editCardForm = document.getElementById("edit-card-form");
 const editQuestionInput = document.getElementById("edit-question");
 const editAnswerInput = document.getElementById("edit-answer");
 const editCardError = document.getElementById("edit-card-error");
+
+const aiGenerateButton = document.getElementById("ai-generate-btn");
+const aiGenerateModal = document.getElementById("ai-generate-modal");
+const aiGenerateForm = document.getElementById("ai-generate-form");
+const aiTopicInput = document.getElementById("ai-topic-input");
+const aiCountInput = document.getElementById("ai-count-input");
+const aiCollectionNameInput = document.getElementById("ai-collection-name-input");
+const aiGenerateError = document.getElementById("ai-generate-error");
+const aiGenerateSubmitButton = document.getElementById("ai-generate-submit-btn");
+const aiClearButton = document.getElementById("ai-clear-btn");
+const aiPreviewSection = document.getElementById("ai-preview-section");
+const aiPreviewSummary = document.getElementById("ai-preview-summary");
+const aiPreviewList = document.getElementById("ai-preview-list");
+const aiSaveButton = document.getElementById("ai-save-btn");
 
 const confirmModal = document.getElementById("confirm-modal");
 const confirmTitle = document.getElementById("confirm-title");
@@ -458,6 +476,10 @@ function closeModalById(modalId) {
         setModalError(editCardError);
     }
 
+    if (modalId === "ai-generate-modal") {
+        resetAiGeneratorState();
+    }
+
     if (modalId === "confirm-modal") {
         pendingConfirmAction = null;
         if (confirmActionButton) {
@@ -628,6 +650,7 @@ async function initializeApp() {
     setupAddCardModal();
     setupCollectionModal();
     setupEditCardModal();
+    setupAiGeneratorModal();
     setupConfirmModal();
     setupWelcomeModal();
     setupNoticeModal();
@@ -661,6 +684,27 @@ function setupCollectionModal() {
 function setupEditCardModal() {
     if (!editCardForm) return;
     editCardForm.addEventListener("submit", handleEditCardFormSubmit);
+}
+
+function setupAiGeneratorModal() {
+    if (aiGenerateButton) {
+        aiGenerateButton.addEventListener("click", openAiGeneratorModal);
+    }
+
+    if (aiGenerateForm) {
+        aiGenerateForm.addEventListener("submit", handleAiGenerateFormSubmit);
+    }
+
+    if (aiClearButton) {
+        aiClearButton.addEventListener("click", () => {
+            resetAiGeneratorState({ keepTopic: false });
+            if (aiTopicInput) aiTopicInput.focus();
+        });
+    }
+
+    if (aiSaveButton) {
+        aiSaveButton.addEventListener("click", handleSaveGeneratedCards);
+    }
 }
 
 function setupConfirmModal() {
@@ -768,6 +812,203 @@ function setupKeyboardShortcuts() {
             prevCard();
         }
     });
+}
+
+function resetAiPreview() {
+    aiGeneratedCards = [];
+    aiGeneratedCollectionName = "";
+    if (aiPreviewSection) aiPreviewSection.hidden = true;
+    if (aiPreviewList) aiPreviewList.innerHTML = "";
+    if (aiPreviewSummary) aiPreviewSummary.textContent = "0 cards ready";
+    if (aiSaveButton) {
+        aiSaveButton.disabled = false;
+        aiSaveButton.textContent = "Save Set";
+    }
+}
+
+function updateAiActionButtons() {
+    if (aiGenerateSubmitButton) {
+        aiGenerateSubmitButton.disabled = aiGenerationInFlight || aiSaveInFlight;
+        aiGenerateSubmitButton.textContent = aiGenerationInFlight ? "Generating..." : "Generate Draft";
+    }
+    if (aiClearButton) {
+        aiClearButton.disabled = aiGenerationInFlight || aiSaveInFlight;
+    }
+    if (aiSaveButton) {
+        aiSaveButton.disabled = aiGenerationInFlight || aiSaveInFlight || aiGeneratedCards.length === 0;
+        aiSaveButton.textContent = aiSaveInFlight ? "Saving..." : "Save Set";
+    }
+}
+
+function resetAiGeneratorState(options = {}) {
+    const keepTopic = Boolean(options.keepTopic);
+    aiGenerationInFlight = false;
+    aiSaveInFlight = false;
+    resetAiPreview();
+    setModalError(aiGenerateError);
+    if (!keepTopic) {
+        if (aiTopicInput) aiTopicInput.value = "";
+        if (aiCountInput) aiCountInput.value = "12";
+        if (aiCollectionNameInput) aiCollectionNameInput.value = "";
+    }
+    updateAiActionButtons();
+}
+
+function renderAiPreview(cards, collectionName) {
+    if (!aiPreviewSection || !aiPreviewList || !aiPreviewSummary) return;
+
+    aiPreviewList.innerHTML = "";
+    cards.forEach((card, index) => {
+        const article = document.createElement("article");
+        article.className = "ai-preview-card";
+
+        const questionLabel = document.createElement("p");
+        questionLabel.className = "ai-preview-card-label";
+        questionLabel.textContent = `Card ${index + 1} · Question`;
+
+        const questionText = document.createElement("p");
+        questionText.className = "ai-preview-card-text";
+        questionText.textContent = card.question;
+
+        const answerLabel = document.createElement("p");
+        answerLabel.className = "ai-preview-card-label";
+        answerLabel.textContent = "Answer";
+
+        const answerText = document.createElement("p");
+        answerText.className = "ai-preview-card-text";
+        answerText.textContent = card.answer;
+
+        article.appendChild(questionLabel);
+        article.appendChild(questionText);
+        article.appendChild(answerLabel);
+        article.appendChild(answerText);
+        aiPreviewList.appendChild(article);
+    });
+
+    aiPreviewSummary.textContent = `${cards.length} cards ready · target collection: ${collectionName}`;
+    aiPreviewSection.hidden = false;
+}
+
+function openAiGeneratorModal() {
+    if (!aiGenerateModal || !aiTopicInput) return;
+
+    if (!hasValidToken()) {
+        showNoticeModal(
+            "Sign In Required",
+            "You must be logged in to generate cards with AI.",
+            { showLoginButton: true }
+        );
+        return;
+    }
+
+    resetAiGeneratorState();
+    const selectedCollection = getActiveCollection();
+    if (aiCollectionNameInput) {
+        aiCollectionNameInput.value = "";
+        aiCollectionNameInput.placeholder = selectedCollection
+            ? `Blank saves to ${getCollectionDisplayName(selectedCollection)}`
+            : "Blank uses the topic as the collection name";
+    }
+    openModal(aiGenerateModal);
+    aiTopicInput.focus();
+}
+
+function validateAiGenerationInput() {
+    const topic = String(aiTopicInput?.value || "").trim();
+    const count = Number.parseInt(aiCountInput?.value || "", 10);
+    const collectionName = String(aiCollectionNameInput?.value || "").trim();
+
+    if (!topic) {
+        return { error: "Please enter a topic to generate a study set." };
+    }
+    if (topic.length > 180) {
+        return { error: "Topic must be 180 characters or fewer." };
+    }
+    if (!Number.isInteger(count) || count < 3 || count > 24) {
+        return { error: "Choose between 3 and 24 cards." };
+    }
+    if (collectionName.length > 120) {
+        return { error: "Collection name must be 120 characters or fewer." };
+    }
+
+    return {
+        topic,
+        count,
+        collectionName,
+        error: "",
+    };
+}
+
+async function handleAiGenerateFormSubmit(event) {
+    event.preventDefault();
+    if (aiGenerationInFlight || aiSaveInFlight) return;
+
+    const validation = validateAiGenerationInput();
+    if (validation.error) {
+        setModalError(aiGenerateError, validation.error);
+        return;
+    }
+
+    try {
+        aiGenerationInFlight = true;
+        setModalError(aiGenerateError);
+        resetAiPreview();
+        updateAiActionButtons();
+
+        const response = await fetch(`${API_URL}/ai/generate-cards`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({
+                topic: validation.topic,
+                count: validation.count,
+                collection_name: validation.collectionName || null,
+            })
+        });
+
+        if (response.status === 401) {
+            setModalError(aiGenerateError, "Session expired. Please login again.");
+            return;
+        }
+
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(payload.detail || `AI generation failed (HTTP ${response.status}).`);
+        }
+
+        const rawCards = Array.isArray(payload.cards) ? payload.cards : [];
+        const normalizedCards = rawCards.map((card) => {
+            const validationResult = validateCardContent(card?.question, card?.answer);
+            if (validationResult.error) {
+                throw new Error(validationResult.error);
+            }
+            return {
+                question: validationResult.question,
+                answer: validationResult.answer,
+            };
+        });
+
+        if (!normalizedCards.length) {
+            throw new Error("The AI returned no usable cards.");
+        }
+
+        aiGeneratedCards = normalizedCards;
+        aiGeneratedCollectionName = String(payload.collection_name || validation.collectionName || validation.topic).trim();
+        const selectedCollection = getActiveCollection();
+        if (aiCollectionNameInput && !validation.collectionName && !selectedCollection) {
+            aiCollectionNameInput.value = aiGeneratedCollectionName;
+        }
+
+        renderAiPreview(
+            aiGeneratedCards,
+            selectedCollection ? getCollectionDisplayName(selectedCollection) : aiGeneratedCollectionName
+        );
+    } catch (error) {
+        console.error("AI generation failed:", error);
+        setModalError(aiGenerateError, error?.message || "Could not generate cards right now.");
+    } finally {
+        aiGenerationInFlight = false;
+        updateAiActionButtons();
+    }
 }
 
 function showNoticeModal(title, message, options = {}) {
@@ -940,6 +1181,56 @@ async function createImportedCollectionWithRetry(collectionData) {
     throw new Error("Could not create the imported collection because of repeated name conflicts.");
 }
 
+function findCollectionByName(name) {
+    const normalizedName = String(name || "").trim().toLowerCase();
+    if (!normalizedName) return null;
+
+    return collections.find((collection) => {
+        const collectionName = String(collection?.name || "").trim().toLowerCase();
+        const className = String(collection?.class_name || "").trim();
+        return collectionName === normalizedName && !className;
+    }) || null;
+}
+
+async function createAiCollectionWithRetry(collectionData) {
+    const baseName = String(collectionData?.name || "").trim();
+    if (!baseName) {
+        throw new Error("Collection name is required to save this AI set.");
+    }
+
+    const color = sanitizeCollectionColor(collectionData?.color || DEFAULT_COLLECTION_COLOR);
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+        const suffix = attempt === 0 ? "" : attempt === 1 ? " (AI)" : ` (AI ${attempt})`;
+        const candidateName = `${baseName}${suffix}`;
+
+        const response = await fetch(`${API_URL}/collections`, {
+            method: "POST",
+            headers: getHeaders(),
+            body: JSON.stringify({
+                name: candidateName,
+                class_name: null,
+                color,
+            })
+        });
+
+        const payload = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            throw new Error("Session expired. Please login again.");
+        }
+        if (response.status === 409) {
+            continue;
+        }
+        if (!response.ok) {
+            throw new Error(payload.detail || `Collection creation failed (HTTP ${response.status}).`);
+        }
+
+        return normalizeCollectionPayload(payload);
+    }
+
+    throw new Error("Could not create a collection for this AI set.");
+}
+
 async function importCollectionPayload(importPayload) {
     const newCollection = await createImportedCollectionWithRetry(importPayload.collection);
     let importedCount = 0;
@@ -994,6 +1285,95 @@ async function handleCollectionImportFile(event) {
         if (importCollectionFileInput) {
             importCollectionFileInput.value = "";
         }
+    }
+}
+
+async function resolveAiTargetCollection() {
+    const selectedCollection = getActiveCollection();
+    const requestedName = String(aiCollectionNameInput?.value || "").trim();
+
+    if (!requestedName && selectedCollection) {
+        return selectedCollection;
+    }
+
+    const targetName = requestedName || aiGeneratedCollectionName || String(aiTopicInput?.value || "").trim();
+    if (!targetName) {
+        throw new Error("Please enter a collection name before saving.");
+    }
+
+    const existingCollection = findCollectionByName(targetName);
+    if (existingCollection) {
+        return existingCollection;
+    }
+
+    return createAiCollectionWithRetry({
+        name: targetName,
+        color: selectedCollection?.color || DEFAULT_COLLECTION_COLOR,
+    });
+}
+
+async function handleSaveGeneratedCards() {
+    if (aiGenerationInFlight || aiSaveInFlight || aiGeneratedCards.length === 0) return;
+    if (!hasValidToken()) {
+        showNoticeModal(
+            "Sign In Required",
+            "You must be logged in to save AI-generated cards.",
+            { showLoginButton: true }
+        );
+        return;
+    }
+
+    try {
+        aiSaveInFlight = true;
+        setModalError(aiGenerateError);
+        updateAiActionButtons();
+
+        const generatedCount = aiGeneratedCards.length;
+        const targetCollection = await resolveAiTargetCollection();
+        const results = await Promise.allSettled(
+            aiGeneratedCards.map((card) =>
+                fetch(`${API_URL}/cards`, {
+                    method: "POST",
+                    headers: getHeaders(),
+                    body: JSON.stringify({
+                        question: card.question,
+                        answer: card.answer,
+                        collection_id: targetCollection?.id ?? null,
+                    })
+                })
+            )
+        );
+
+        let savedCount = 0;
+        for (const result of results) {
+            if (result.status !== "fulfilled") continue;
+            const response = result.value;
+            if (response.status === 401) {
+                throw new Error("Session expired. Please login again.");
+            }
+            if (response.ok) {
+                savedCount += 1;
+            }
+        }
+
+        if (savedCount === 0) {
+            throw new Error("No cards were saved.");
+        }
+
+        activeCollection = targetCollection?.id ? String(targetCollection.id) : "all";
+        await fetchCollections();
+        await fetchFlashcards();
+        closeModalById("ai-generate-modal");
+        showNoticeModal(
+            "AI Set Saved",
+            `Saved ${savedCount} of ${generatedCount} card(s) to ${getCollectionDisplayName(targetCollection)}.`
+        );
+    } catch (error) {
+        console.error("Saving AI cards failed:", error);
+        setModalError(aiGenerateError, error?.message || "Could not save this AI set right now.");
+    } finally {
+        aiSaveInFlight = false;
+        updateAiActionButtons();
     }
 }
 

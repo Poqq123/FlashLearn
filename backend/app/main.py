@@ -1,9 +1,10 @@
-# main.py
 import os
 import re
+import json
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+import httpx
 import jwt
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,6 +30,12 @@ DEFAULT_COLLECTION_COLOR = "#0F4C5C"
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 CARD_QUESTION_MAX_LENGTH = 480
 CARD_ANSWER_MAX_LENGTH = 960
+AI_TOPIC_MAX_LENGTH = 180
+AI_COLLECTION_NAME_MAX_LENGTH = 120
+AI_GENERATED_CARD_MIN_COUNT = 3
+AI_GENERATED_CARD_MAX_COUNT = 24
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
 
 class CollectionDB(Base):
@@ -234,6 +241,12 @@ class CardProgressResetSchema(BaseModel):
     collection_id: Optional[int] = None
 
 
+class AIGenerateCardsSchema(BaseModel):
+    topic: str
+    count: int = 12
+    collection_name: Optional[str] = None
+
+
 def normalize_collection_color(color: Optional[str]) -> str:
     if not color:
         return DEFAULT_COLLECTION_COLOR
@@ -360,6 +373,197 @@ def apply_card_review(card: CardDB, rating: str) -> dict:
         "next_due_at": due_at.isoformat(),
         "interval_days": interval_days,
     }
+
+
+def normalize_topic(value: str) -> str:
+    normalized = " ".join(value.strip().split())
+    if not normalized:
+        raise HTTPException(status_code=400, detail="Topic is required")
+    if len(normalized) > AI_TOPIC_MAX_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Topic must be {AI_TOPIC_MAX_LENGTH} characters or fewer",
+        )
+    return normalized
+
+
+def normalize_generated_card_count(value: int) -> int:
+    if value < AI_GENERATED_CARD_MIN_COUNT or value > AI_GENERATED_CARD_MAX_COUNT:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Card count must be between {AI_GENERATED_CARD_MIN_COUNT} "
+                f"and {AI_GENERATED_CARD_MAX_COUNT}"
+            ),
+        )
+    return value
+
+
+def normalize_optional_collection_name(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return None
+    normalized = " ".join(value.strip().split())
+    if not normalized:
+        return None
+    if len(normalized) > AI_COLLECTION_NAME_MAX_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Collection name must be {AI_COLLECTION_NAME_MAX_LENGTH} characters or fewer",
+        )
+    return normalized
+
+
+def extract_json_object_from_text(text: str) -> dict:
+    candidate = text.strip()
+    if candidate.startswith("```"):
+        candidate = re.sub(r"^```[a-zA-Z0-9_-]*\s*", "", candidate)
+        candidate = re.sub(r"\s*```$", "", candidate)
+
+    try:
+        parsed = json.loads(candidate)
+    except json.JSONDecodeError:
+        start_index = candidate.find("{")
+        end_index = candidate.rfind("}")
+        if start_index < 0 or end_index <= start_index:
+            raise HTTPException(status_code=502, detail="AI returned malformed JSON")
+        try:
+            parsed = json.loads(candidate[start_index : end_index + 1])
+        except json.JSONDecodeError as error:
+            raise HTTPException(status_code=502, detail="AI returned malformed JSON") from error
+
+    if not isinstance(parsed, dict):
+        raise HTTPException(status_code=502, detail="AI response must be a JSON object")
+    return parsed
+
+
+def extract_text_from_gemini_response(payload: dict) -> str:
+    candidates = payload.get("candidates") or []
+    if not candidates:
+        raise HTTPException(status_code=502, detail="AI did not return any candidates")
+
+    content = candidates[0].get("content") or {}
+    parts = content.get("parts") or []
+    text_chunks = [part.get("text", "") for part in parts if isinstance(part, dict) and part.get("text")]
+    response_text = "\n".join(text_chunks).strip()
+    if not response_text:
+        raise HTTPException(status_code=502, detail="AI response was empty")
+    return response_text
+
+
+def normalize_generated_cards_payload(payload: dict, fallback_collection_name: str, requested_count: int) -> dict:
+    raw_collection_name = payload.get("collection_name")
+    collection_name = normalize_optional_collection_name(raw_collection_name) or fallback_collection_name
+
+    raw_cards = payload.get("cards")
+    if not isinstance(raw_cards, list):
+        raise HTTPException(status_code=502, detail="AI response must include a cards array")
+
+    normalized_cards = []
+    seen_questions = set()
+    for raw_card in raw_cards:
+        if not isinstance(raw_card, dict):
+            continue
+
+        try:
+            question = normalize_card_text(str(raw_card.get("question", "")), "Question", CARD_QUESTION_MAX_LENGTH)
+            answer = normalize_card_text(str(raw_card.get("answer", "")), "Answer", CARD_ANSWER_MAX_LENGTH)
+        except HTTPException:
+            continue
+
+        question_key = question.casefold()
+        if question_key in seen_questions:
+            continue
+        seen_questions.add(question_key)
+
+        normalized_cards.append({"question": question, "answer": answer})
+
+        if len(normalized_cards) >= requested_count:
+            break
+
+    if len(normalized_cards) < AI_GENERATED_CARD_MIN_COUNT:
+        raise HTTPException(status_code=502, detail="AI did not generate enough valid cards")
+
+    return {
+        "collection_name": collection_name,
+        "cards": normalized_cards,
+    }
+
+
+def build_gemini_flashcard_prompt(topic: str, count: int, collection_name: Optional[str]) -> str:
+    collection_instruction = (
+        f'Use "{collection_name}" as the collection_name value.'
+        if collection_name
+        else "Set collection_name to a short, human-friendly deck title based on the topic."
+    )
+
+    return f"""
+Create exactly {count} high-quality study flashcards for the topic: "{topic}".
+
+Requirements:
+- Focus on foundational facts, definitions, comparisons, and cause-effect relationships.
+- Keep each question clear and answerable without extra context.
+- Keep answers concise, typically one sentence or short phrase.
+- Do not include numbering, markdown, or commentary.
+- Avoid duplicate or near-duplicate cards.
+- Ensure all cards are accurate and useful for studying.
+- {collection_instruction}
+
+Return strict JSON with this shape only:
+{{
+  "collection_name": "string",
+  "cards": [
+    {{
+      "question": "string",
+      "answer": "string"
+    }}
+  ]
+}}
+""".strip()
+
+
+def generate_cards_with_gemini(topic: str, count: int, collection_name: Optional[str]) -> dict:
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=503, detail="Gemini is not configured on the server")
+
+    prompt = build_gemini_flashcard_prompt(topic, count, collection_name)
+    endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+
+    request_payload = {
+        "systemInstruction": {
+            "parts": [
+                {
+                    "text": (
+                        "You generate concise, accurate educational flashcards and always return "
+                        "valid JSON when asked."
+                    )
+                }
+            ]
+        },
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.5,
+            "responseMimeType": "application/json",
+        },
+    }
+
+    try:
+        response = httpx.post(
+            endpoint,
+            params={"key": GEMINI_API_KEY},
+            json=request_payload,
+            timeout=45.0,
+        )
+    except httpx.HTTPError as error:
+        raise HTTPException(status_code=502, detail="Could not reach Gemini") from error
+
+    if response.status_code >= 400:
+        raise HTTPException(status_code=502, detail=f"Gemini request failed ({response.status_code})")
+
+    payload = response.json()
+    response_text = extract_text_from_gemini_response(payload)
+    parsed_json = extract_json_object_from_text(response_text)
+    fallback_collection_name = collection_name or topic
+    return normalize_generated_cards_payload(parsed_json, fallback_collection_name, count)
 
 
 # ==========================================
@@ -628,3 +832,23 @@ def reset_card_progress(
     db.commit()
 
     return {"message": "Card progress reset", "cards_reset": cards_to_reset}
+
+
+@app.post("/ai/generate-cards")
+def generate_cards(
+    request: AIGenerateCardsSchema,
+    user_id: str = Depends(get_current_user),
+):
+    del user_id
+
+    topic = normalize_topic(request.topic)
+    count = normalize_generated_card_count(request.count)
+    collection_name = normalize_optional_collection_name(request.collection_name)
+    generated = generate_cards_with_gemini(topic, count, collection_name)
+
+    return {
+        "topic": topic,
+        "count": len(generated["cards"]),
+        "collection_name": generated["collection_name"],
+        "cards": generated["cards"],
+    }

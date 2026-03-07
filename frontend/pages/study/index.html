@@ -139,7 +139,12 @@
 
             <div class="flashcard-container">
                 <p id="active-collection" class="active-collection">Showing: All Collections</p>
-                <a href="../quiz/quiz.html" class="study-page-link">Study Mode: Open Quiz & Performance</a>
+                <div class="study-utility-actions">
+                    <a href="../quiz/quiz.html" class="study-page-link">Study Mode: Open Quiz & Performance</a>
+                    <button id="ai-generate-btn" class="study-page-link ai-generate-btn" type="button">
+                        Generate Flashcards with AI
+                    </button>
+                </div>
 
                 <div class="flashcard-row">
                     <div class="flashcard" id="flashcard" onclick="flipCard()">
@@ -241,6 +246,43 @@
                     <button type="submit" class="modal-save-btn">Save Changes</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="ai-generate-modal" class="modal-overlay" aria-hidden="true">
+        <div class="modal-dialog modal-ai" role="dialog" aria-modal="true" aria-labelledby="ai-generate-title">
+            <button class="modal-close" type="button" data-close-modal="ai-generate-modal" aria-label="Close AI flashcard generator">×</button>
+            <h2 id="ai-generate-title">Generate a Flashcard Set with AI</h2>
+            <p class="modal-subtitle">Enter a topic, let Gemini draft a study set, then save the cards you want.</p>
+
+            <form id="ai-generate-form" class="modal-form">
+                <label for="ai-topic-input">Topic</label>
+                <textarea id="ai-topic-input" name="topic" rows="3" maxlength="180" placeholder="Examples: Photosynthesis, World War I causes, Python decorators" required></textarea>
+
+                <label for="ai-count-input">Number of Cards</label>
+                <input id="ai-count-input" name="count" type="number" min="3" max="24" step="1" value="12" required />
+
+                <label for="ai-collection-name-input">Collection Name (Optional)</label>
+                <input id="ai-collection-name-input" name="collection_name" type="text" maxlength="120" placeholder="Blank uses the selected collection or the topic" />
+
+                <p id="ai-generate-error" class="modal-error" aria-live="polite"></p>
+
+                <div class="modal-actions">
+                    <button type="button" id="ai-clear-btn" class="modal-cancel-btn">Clear</button>
+                    <button type="submit" id="ai-generate-submit-btn" class="modal-save-btn">Generate Draft</button>
+                </div>
+            </form>
+
+            <section id="ai-preview-section" class="ai-preview-section" hidden>
+                <div class="ai-preview-header">
+                    <p class="ai-preview-title">Draft Preview</p>
+                    <p id="ai-preview-summary" class="ai-preview-summary">0 cards ready</p>
+                </div>
+                <div id="ai-preview-list" class="ai-preview-list" aria-live="polite"></div>
+                <div class="modal-actions">
+                    <button type="button" id="ai-save-btn" class="modal-save-btn">Save Set</button>
+                </div>
+            </section>
         </div>
     </div>
 
