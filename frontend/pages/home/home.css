@@ -309,9 +309,61 @@ a {
 }
 
 .preview-body {
+    position: relative;
     display: grid;
     grid-template-columns: 170px minmax(0, 1fr);
     gap: 16px;
+}
+
+.preview-cursor {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 40px;
+    height: 44px;
+    color: #fffdf8;
+    filter:
+        drop-shadow(0 0 0 2px rgba(20, 18, 15, 0.88))
+        drop-shadow(0 12px 18px rgba(33, 28, 21, 0.24));
+    transform: translate(44px, 88px);
+    transition: transform 1.12s cubic-bezier(0.23, 1, 0.32, 1);
+    z-index: 3;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.preview-cursor::after {
+    content: "";
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    left: 9px;
+    top: 14px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(15, 76, 92, 0.24), rgba(15, 76, 92, 0));
+    opacity: 0.85;
+    transform: scale(0.85);
+    transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.preview-cursor svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: currentColor;
+    stroke: rgba(20, 18, 15, 0.92);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+    transition: transform 0.18s ease;
+}
+
+.preview-cursor.is-pressing svg {
+    transform: scale(0.94);
+}
+
+.preview-cursor.is-pressing::after {
+    transform: scale(1.22);
+    opacity: 1;
 }
 
 .preview-panel {
@@ -340,6 +392,7 @@ a {
     background: rgba(255, 255, 255, 0.82);
     color: var(--ink-2);
     font-weight: 700;
+    transition: transform 0.35s ease, box-shadow 0.35s ease, background 0.35s ease, color 0.35s ease;
 }
 
 .collection-pill + .collection-pill {
@@ -349,7 +402,8 @@ a {
 .collection-pill.is-active {
     background: linear-gradient(160deg, var(--brand), var(--brand-strong));
     color: #f8f5ef;
-    box-shadow: 0 14px 24px rgba(15, 76, 92, 0.2);
+    box-shadow: 0 18px 28px rgba(15, 76, 92, 0.24);
+    transform: translateX(4px);
 }
 
 .flashcard-preview {
@@ -357,6 +411,12 @@ a {
     border-radius: 24px;
     background: linear-gradient(160deg, rgba(15, 76, 92, 0.08), rgba(255, 255, 255, 0.8));
     min-height: 250px;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.flashcard-preview.is-swapping {
+    opacity: 0.82;
+    transform: translateY(2px);
 }
 
 .flashcard-tag {
@@ -584,7 +644,14 @@ a {
         scroll-behavior: auto;
     }
 
-    .button {
+    .button,
+    .collection-pill,
+    .flashcard-preview,
+    .preview-cursor {
         transition: none;
+    }
+
+    .preview-cursor {
+        display: none;
     }
 }

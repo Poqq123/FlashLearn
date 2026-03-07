@@ -89,32 +89,38 @@
             </div>
 
             <div class="preview-body">
+              <span class="preview-cursor" id="preview-cursor" aria-hidden="true">
+                <svg viewBox="0 0 28 32" focusable="false">
+                  <path d="M4 2l18 15-8 1 4 9-4 2-4-9-6 6z"></path>
+                </svg>
+              </span>
+
               <div class="preview-panel preview-panel-sidebar">
                 <p class="preview-label">Collections</p>
-                <div class="collection-pill is-active">Biology 101</div>
-                <div class="collection-pill">World History</div>
-                <div class="collection-pill">Spanish Vocab</div>
+                <div class="collection-pill is-active" data-preview-pill>Biology 101</div>
+                <div class="collection-pill" data-preview-pill>World History</div>
+                <div class="collection-pill" data-preview-pill>Spanish Vocab</div>
               </div>
 
               <div class="preview-panel preview-panel-main">
                 <p class="preview-label">Current Card</p>
-                <article class="flashcard-preview">
-                  <span class="flashcard-tag">Due now</span>
-                  <h2>What does ATP do in a cell?</h2>
-                  <p>Stores and transfers energy for cellular processes.</p>
+                <article class="flashcard-preview" id="preview-flashcard">
+                  <span class="flashcard-tag" id="preview-tag">Due now</span>
+                  <h2 id="preview-question">What does ATP do in a cell?</h2>
+                  <p id="preview-answer">Stores and transfers energy for cellular processes.</p>
                 </article>
 
                 <div class="preview-stats">
                   <article>
-                    <strong>84%</strong>
+                    <strong id="preview-accuracy">84%</strong>
                     <span>Accuracy</span>
                   </article>
                   <article>
-                    <strong>42</strong>
+                    <strong id="preview-mastered">42</strong>
                     <span>Mastered</span>
                   </article>
                   <article>
-                    <strong>12</strong>
+                    <strong id="preview-reviewed">12</strong>
                     <span>Reviewed today</span>
                   </article>
                 </div>
@@ -211,6 +217,106 @@
     const heroSecondaryCta = document.getElementById("hero-secondary-cta");
     const footerPrimaryCta = document.getElementById("footer-primary-cta");
     const footerSecondaryCta = document.getElementById("footer-secondary-cta");
+    const previewCursor = document.getElementById("preview-cursor");
+    const previewFlashcard = document.getElementById("preview-flashcard");
+    const previewQuestion = document.getElementById("preview-question");
+    const previewAnswer = document.getElementById("preview-answer");
+    const previewTag = document.getElementById("preview-tag");
+    const previewAccuracy = document.getElementById("preview-accuracy");
+    const previewMastered = document.getElementById("preview-mastered");
+    const previewReviewed = document.getElementById("preview-reviewed");
+    const previewPills = Array.from(document.querySelectorAll("[data-preview-pill]"));
+    const previewSequence = [0, 1, 2, 1];
+    const previewState = [
+      {
+        tag: "Due now",
+        question: "What does ATP do in a cell?",
+        answer: "Stores and transfers energy for cellular processes.",
+        accuracy: "84%",
+        mastered: "42",
+        reviewed: "12",
+      },
+      {
+        tag: "Next up",
+        question: "What sparked the outbreak of World War I?",
+        answer: "The assassination of Archduke Franz Ferdinand in Sarajevo.",
+        accuracy: "79%",
+        mastered: "35",
+        reviewed: "9",
+      },
+      {
+        tag: "Quick review",
+        question: "How do you say \"library\" in Spanish?",
+        answer: "Biblioteca.",
+        accuracy: "91%",
+        mastered: "58",
+        reviewed: "16",
+      },
+    ];
+
+    let previewTimer = null;
+    let previewSwapTimer = null;
+    let previewStep = 0;
+    let previewCursorPosition = { x: 44, y: 88 };
+
+    const renderPreviewState = (index) => {
+      const state = previewState[index];
+      previewPills.forEach((pill, pillIndex) => {
+        pill.classList.toggle("is-active", pillIndex === index);
+      });
+      if (!state) return;
+
+      window.clearTimeout(previewSwapTimer);
+      previewFlashcard?.classList.add("is-swapping");
+      previewSwapTimer = window.setTimeout(() => {
+        if (previewTag) previewTag.textContent = state.tag;
+        if (previewQuestion) previewQuestion.textContent = state.question;
+        if (previewAnswer) previewAnswer.textContent = state.answer;
+        if (previewAccuracy) previewAccuracy.textContent = state.accuracy;
+        if (previewMastered) previewMastered.textContent = state.mastered;
+        if (previewReviewed) previewReviewed.textContent = state.reviewed;
+        previewFlashcard?.classList.remove("is-swapping");
+      }, 140);
+    };
+
+    const movePreviewCursor = (index) => {
+      if (!previewCursor || !previewPills[index]) return;
+      const cursorHost = previewCursor.parentElement;
+      if (!cursorHost) return;
+
+      const hostRect = cursorHost.getBoundingClientRect();
+      const pillRect = previewPills[index].getBoundingClientRect();
+      const x = pillRect.left - hostRect.left + (pillRect.width * 0.22);
+      const y = pillRect.top - hostRect.top + (pillRect.height * 0.58);
+
+      previewCursor.animate(
+        [
+          { transform: `translate(${previewCursorPosition.x}px, ${previewCursorPosition.y}px)` },
+          { transform: `translate(${x}px, ${y}px)` },
+        ],
+        {
+          duration: 1120,
+          easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+          fill: "forwards",
+        }
+      );
+      previewCursor.style.transform = `translate(${x}px, ${y}px)`;
+      previewCursorPosition = { x, y };
+      previewCursor.classList.add("is-pressing");
+      window.setTimeout(() => previewCursor.classList.remove("is-pressing"), 220);
+    };
+
+    const runPreviewLoop = () => {
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion || !previewPills.length || !previewCursor) return;
+
+      const activeIndex = previewSequence[previewStep % previewSequence.length];
+      movePreviewCursor(activeIndex);
+      previewSwapTimer = window.setTimeout(() => renderPreviewState(activeIndex), 620);
+      previewStep += 1;
+
+      previewTimer = window.setTimeout(runPreviewLoop, 2280);
+    };
 
     const applyLoggedOutState = () => {
       [headerCta, footerPrimaryCta, footerSecondaryCta].forEach((link) => {
@@ -240,6 +346,32 @@
     };
 
     applyLoggedOutState();
+    renderPreviewState(0);
+
+    if (previewCursor && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.setTimeout(() => {
+        movePreviewCursor(0);
+        previewTimer = window.setTimeout(runPreviewLoop, 1200);
+      }, 260);
+
+      window.addEventListener("resize", () => {
+        const activeIndex = previewPills.findIndex((pill) => pill.classList.contains("is-active"));
+        movePreviewCursor(activeIndex >= 0 ? activeIndex : 0);
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          window.clearTimeout(previewTimer);
+          previewTimer = null;
+          return;
+        }
+
+        if (!previewTimer) {
+          window.clearTimeout(previewTimer);
+          previewTimer = window.setTimeout(runPreviewLoop, 600);
+        }
+      });
+    }
 
     try {
       const { session } = await bootstrapSession(supabase, {
