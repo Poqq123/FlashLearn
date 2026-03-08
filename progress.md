@@ -27,3 +27,5 @@ One user said when they Put "!@#$%^&*()" as an answer, and when they inputted "!
   - 61-character names are rejected with a clear validation error
   - imported/AI retry suffixes stay within 60 characters
   - syntax checks passed for `backend/app/main.py`, `frontend/pages/study/study.js`, and `frontend/pages/quiz/quiz.js`
+- Updated the homepage header auth button in `home.html` so it shows `Log In` when signed out and switches to `Profile` when signed in, while the primary CTA remains `Open Dashboard`.
+- Verified the landing-page inline script syntax by extracting it to a temp `.js` file and running `node --check`.

@@ -40,7 +40,7 @@
       <nav class="topbar-actions" aria-label="Primary">
         <a class="nav-link" href="#features">Features</a>
         <a class="nav-link" href="#how-it-works">How it works</a>
-        <a class="button button-ghost" href="./login.html?next=../study/index.html">Log In</a>
+        <a class="button button-ghost" id="header-auth-link" href="./login.html?next=../study/index.html">Log In</a>
         <a class="button button-primary" id="header-cta" href="./login.html?next=../study/index.html">Sign Up Free</a>
       </nav>
     </header>
@@ -208,10 +208,12 @@
 
     const { CONFIG, bootstrapSession } = core;
     const studyPath = "./frontend/pages/study/index.html";
+    const profilePath = "./frontend/pages/profile/profile.html";
     const loginNextPath = "../study/index.html";
     const loginHref = `./login.html?next=${encodeURIComponent(loginNextPath)}`;
     const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
+    const headerAuthLink = document.getElementById("header-auth-link");
     const headerCta = document.getElementById("header-cta");
     const heroPrimaryCta = document.getElementById("hero-primary-cta");
     const heroSecondaryCta = document.getElementById("hero-secondary-cta");
@@ -319,10 +321,11 @@
     };
 
     const applyLoggedOutState = () => {
-      [headerCta, footerPrimaryCta, footerSecondaryCta].forEach((link) => {
+      [headerAuthLink, headerCta, footerPrimaryCta, footerSecondaryCta].forEach((link) => {
         if (!link) return;
         link.href = loginHref;
       });
+      if (headerAuthLink) headerAuthLink.textContent = "Log In";
       if (headerCta) headerCta.textContent = "Sign Up Free";
       if (heroPrimaryCta) heroPrimaryCta.href = loginHref;
       if (heroSecondaryCta) heroSecondaryCta.textContent = "Explore the Study App";
@@ -332,10 +335,13 @@
 
     const applyLoggedInState = () => {
       const dashboardPath = new URL(studyPath, window.location.href).toString();
+      const profileHref = new URL(profilePath, window.location.href).toString();
       [headerCta, heroPrimaryCta, heroSecondaryCta, footerPrimaryCta, footerSecondaryCta].forEach((link) => {
         if (!link) return;
         link.href = dashboardPath;
       });
+      if (headerAuthLink) headerAuthLink.textContent = "Profile";
+      if (headerAuthLink) headerAuthLink.href = profileHref;
       if (headerCta) headerCta.textContent = "Open Dashboard";
       if (heroPrimaryCta) heroPrimaryCta.textContent = "Open Study Dashboard";
       if (heroSecondaryCta) heroSecondaryCta.textContent = "Jump into Study Mode";
