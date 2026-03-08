@@ -708,6 +708,7 @@ button.quiz-collection-card.is-active .collection-card-action {
     font-size: clamp(1.5rem, 2vw, 1.8rem);
     line-height: 1.2;
     font-weight: 700;
+    overflow-wrap: anywhere;
 }
 
 .collection-card-subtitle {
@@ -716,6 +717,7 @@ button.quiz-collection-card.is-active .collection-card-action {
     color: var(--ink-2);
     font-size: 0.94rem;
     line-height: 1.5;
+    overflow-wrap: anywhere;
 }
 
 .collection-card-meta {

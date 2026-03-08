@@ -111,7 +111,7 @@
                                     <path d="M12 3v9m0 0-3.5-3.5M12 12l3.5-3.5M4.5 12.8V18a1.5 1.5 0 0 0 1.5 1.5h12A1.5 1.5 0 0 0 19.5 18v-5.2" />
                                 </svg>
                             </button>
-                            <button id="import-collection-btn" class="transfer-icon-btn" type="button" aria-label="Import collection from JSON" title="Import collection">
+                            <button id="import-collection-btn" class="transfer-icon-btn" type="button" aria-label="Import collection (JSON File ONLY)" title="Import Collection (JSON File ONLY)">
                                 <svg viewBox="0 0 24 24" aria-hidden="true">
                                     <path d="M12 21v-9m0 0-3.5 3.5M12 12l3.5 3.5M4.5 12.8V6a1.5 1.5 0 0 1 1.5-1.5h12A1.5 1.5 0 0 1 19.5 6v6.8" />
                                 </svg>
@@ -211,7 +211,7 @@
 
             <form id="collection-form" class="modal-form">
                 <label for="collection-name-input">Collection Name</label>
-                <input id="collection-name-input" name="name" type="text" placeholder="Chapter 5 Review" required />
+                <input id="collection-name-input" name="name" type="text" maxlength="60" placeholder="Chapter 5 Review" required />
 
                 <label for="collection-class-input">Class Name (Optional)</label>
                 <input id="collection-class-input" name="class_name" type="text" placeholder="Physics 101" />
@@ -267,7 +267,7 @@
                 <input id="ai-count-input" name="count" type="number" min="3" max="10" step="1" value="10" required />
 
                 <label for="ai-collection-name-input">Collection Name (Optional)</label>
-                <input id="ai-collection-name-input" name="collection_name" type="text" maxlength="120" placeholder="Blank uses the selected collection or the topic" />
+                <input id="ai-collection-name-input" name="collection_name" type="text" maxlength="60" placeholder="Blank uses the selected collection or the topic" />
 
                 <p id="ai-generate-error" class="modal-error" aria-live="polite"></p>
 

@@ -28,10 +28,11 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 DEFAULT_COLLECTION_COLOR = "#0F4C5C"
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
+COLLECTION_NAME_MAX_LENGTH = 60
 CARD_QUESTION_MAX_LENGTH = 480
 CARD_ANSWER_MAX_LENGTH = 960
 AI_TOPIC_MAX_LENGTH = 180
-AI_COLLECTION_NAME_MAX_LENGTH = 120
+AI_COLLECTION_NAME_MAX_LENGTH = COLLECTION_NAME_MAX_LENGTH
 AI_GENERATED_CARD_MIN_COUNT = 3
 AI_GENERATED_CARD_MAX_COUNT = 10
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -257,6 +258,31 @@ def normalize_collection_color(color: Optional[str]) -> str:
     return candidate.upper()
 
 
+def compact_text(value: str) -> str:
+    return " ".join(value.strip().split())
+
+
+def normalize_collection_name(value: str) -> str:
+    normalized = compact_text(value)
+    if not normalized:
+        raise HTTPException(status_code=400, detail="Collection name is required")
+    if len(normalized) > COLLECTION_NAME_MAX_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Collection name must be {COLLECTION_NAME_MAX_LENGTH} characters or fewer",
+        )
+    return normalized
+
+
+def build_collection_name_fallback(value: str) -> str:
+    normalized = compact_text(value)
+    if not normalized:
+        return "Study Set"
+    if len(normalized) <= COLLECTION_NAME_MAX_LENGTH:
+        return normalized
+    return normalized[:COLLECTION_NAME_MAX_LENGTH].rstrip()
+
+
 def get_owned_collection(collection_id: int, user_id: str, db: Session) -> CollectionDB:
     collection = (
         db.query(CollectionDB)
@@ -402,7 +428,7 @@ def normalize_generated_card_count(value: int) -> int:
 def normalize_optional_collection_name(value: Optional[str]) -> Optional[str]:
     if value is None:
         return None
-    normalized = " ".join(value.strip().split())
+    normalized = compact_text(value)
     if not normalized:
         return None
     if len(normalized) > AI_COLLECTION_NAME_MAX_LENGTH:
@@ -452,7 +478,9 @@ def extract_text_from_gemini_response(payload: dict) -> str:
 
 def normalize_generated_cards_payload(payload: dict, fallback_collection_name: str, requested_count: int) -> dict:
     raw_collection_name = payload.get("collection_name")
-    collection_name = normalize_optional_collection_name(raw_collection_name) or fallback_collection_name
+    collection_name = normalize_optional_collection_name(raw_collection_name) or build_collection_name_fallback(
+        fallback_collection_name
+    )
 
     raw_cards = payload.get("cards")
     if not isinstance(raw_cards, list):
@@ -591,12 +619,9 @@ def create_collection(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    name = collection.name.strip()
+    name = normalize_collection_name(collection.name)
     class_name = collection.class_name.strip() if collection.class_name else None
     color = normalize_collection_color(collection.color)
-
-    if not name:
-        raise HTTPException(status_code=400, detail="Collection name is required")
 
     duplicate = (
         db.query(CollectionDB)
@@ -633,12 +658,9 @@ def update_collection(
 ):
     owned_collection = get_owned_collection(collection_id, user_id, db)
 
-    name = collection.name.strip()
+    name = normalize_collection_name(collection.name)
     class_name = collection.class_name.strip() if collection.class_name else None
     color = normalize_collection_color(collection.color)
-
-    if not name:
-        raise HTTPException(status_code=400, detail="Collection name is required")
 
     duplicate = (
         db.query(CollectionDB)

@@ -8,6 +8,7 @@ const { CONFIG, getHeaders, hasValidToken } = core;
 const API_URL = CONFIG.API_URL;
 const DEFAULT_COLLECTION_COLOR = CONFIG.DEFAULT_COLLECTION_COLOR;
 const BACKGROUND_MODE_STORAGE_KEY = "flashlearn.background.mode";
+const COLLECTION_NAME_MAX_LENGTH = 60;
 const CARD_LENGTH_LIMITS = Object.freeze({
     question: 480,
     answer: 960,
@@ -215,6 +216,38 @@ function truncateCardQuestion(question) {
     const normalized = String(question || "Untitled card").replace(/\s+/g, " ").trim();
     if (normalized.length <= 50) return normalized;
     return `${normalized.slice(0, 47)}...`;
+}
+
+function normalizeInlineText(value) {
+    return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+function validateCollectionName(value, { required = true } = {}) {
+    const normalizedName = normalizeInlineText(value);
+
+    if (!normalizedName) {
+        return required
+            ? { error: "Collection name cannot be empty." }
+            : { name: "", error: "" };
+    }
+
+    if (normalizedName.length > COLLECTION_NAME_MAX_LENGTH) {
+        return { error: `Collection name must be ${COLLECTION_NAME_MAX_LENGTH} characters or fewer.` };
+    }
+
+    return {
+        name: normalizedName,
+        error: "",
+    };
+}
+
+function buildCollectionRetryName(baseName, suffix = "") {
+    const normalizedBase = normalizeInlineText(baseName);
+    if (!suffix) return normalizedBase;
+
+    const maxBaseLength = Math.max(0, COLLECTION_NAME_MAX_LENGTH - suffix.length);
+    const trimmedBase = normalizedBase.slice(0, maxBaseLength).trimEnd();
+    return `${trimmedBase}${suffix}`;
 }
 
 function validateCardContent(question, answer) {
@@ -916,7 +949,7 @@ function openAiGeneratorModal() {
 function validateAiGenerationInput() {
     const topic = String(aiTopicInput?.value || "").trim();
     const count = Number.parseInt(aiCountInput?.value || "", 10);
-    const collectionName = String(aiCollectionNameInput?.value || "").trim();
+    const collectionNameValidation = validateCollectionName(aiCollectionNameInput?.value || "", { required: false });
 
     if (!topic) {
         return { error: "Please enter a topic to generate a study set." };
@@ -927,14 +960,14 @@ function validateAiGenerationInput() {
     if (!Number.isInteger(count) || count < 3 || count > 10) {
         return { error: "Choose between 3 and 10 cards." };
     }
-    if (collectionName.length > 120) {
-        return { error: "Collection name must be 120 characters or fewer." };
+    if (collectionNameValidation.error) {
+        return { error: collectionNameValidation.error };
     }
 
     return {
         topic,
         count,
-        collectionName,
+        collectionName: collectionNameValidation.name || "",
         error: "",
     };
 }
@@ -1090,10 +1123,13 @@ function parseImportedCollectionPayload(rawText) {
 
     const sourceCollection = parsed.collection;
     const sourceCards = parsed.cards;
-    const sourceName = typeof sourceCollection?.name === "string" ? sourceCollection.name.trim() : "";
-    if (!sourceName) {
-        throw new Error("Collection name is missing in the import file.");
+    const sourceNameValidation = validateCollectionName(sourceCollection?.name || "");
+    if (sourceNameValidation.error) {
+        throw new Error(
+            sourceCollection?.name ? sourceNameValidation.error : "Collection name is missing in the import file."
+        );
     }
+    const sourceName = sourceNameValidation.name;
 
     const sourceClassName = typeof sourceCollection?.class_name === "string"
         ? sourceCollection.class_name.trim()
@@ -1145,13 +1181,13 @@ function parseImportedCollectionPayload(rawText) {
 }
 
 async function createImportedCollectionWithRetry(collectionData) {
-    const baseName = collectionData.name;
+    const baseName = validateCollectionName(collectionData.name).name;
     const className = collectionData.class_name || null;
     const color = sanitizeCollectionColor(collectionData.color);
 
     for (let attempt = 0; attempt < 8; attempt += 1) {
         const suffix = attempt === 0 ? "" : attempt === 1 ? " (Imported)" : ` (Imported ${attempt})`;
-        const candidateName = `${baseName}${suffix}`;
+        const candidateName = buildCollectionRetryName(baseName, suffix);
 
         const response = await fetch(`${API_URL}/collections`, {
             method: "POST",
@@ -1193,15 +1229,14 @@ function findCollectionByName(name) {
 }
 
 async function createAiCollectionWithRetry(collectionData) {
-    const baseName = String(collectionData?.name || "").trim();
-    if (!baseName) {
-        throw new Error("Collection name is required to save this AI set.");
-    }
+    const nameValidation = validateCollectionName(collectionData?.name || "");
+    if (nameValidation.error) throw new Error(nameValidation.error);
+    const baseName = nameValidation.name;
 
     const color = sanitizeCollectionColor(collectionData?.color || DEFAULT_COLLECTION_COLOR);
     for (let attempt = 0; attempt < 8; attempt += 1) {
         const suffix = attempt === 0 ? "" : attempt === 1 ? " (AI)" : ` (AI ${attempt})`;
-        const candidateName = `${baseName}${suffix}`;
+        const candidateName = buildCollectionRetryName(baseName, suffix);
 
         const response = await fetch(`${API_URL}/collections`, {
             method: "POST",
@@ -1476,12 +1511,13 @@ async function handleCollectionFormSubmit(event) {
     event.preventDefault();
     if (!collectionNameInput || !collectionClassInput || !collectionColorInput) return;
 
-    const name = collectionNameInput.value.trim();
+    const nameValidation = validateCollectionName(collectionNameInput.value);
+    const name = nameValidation.name || "";
     const className = collectionClassInput.value.trim();
     const color = sanitizeCollectionColor(collectionColorInput.value);
 
-    if (!name) {
-        setModalError(collectionError, "Collection name cannot be empty.");
+    if (nameValidation.error) {
+        setModalError(collectionError, nameValidation.error);
         return;
     }
 
