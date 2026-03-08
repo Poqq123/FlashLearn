@@ -70,7 +70,10 @@ function toNumber(value, fallback = 0) {
 
 function toDateOrNull(value) {
     if (!value) return null;
-    const parsed = new Date(value);
+    const normalizedValue = typeof value === "string" && !/(z|[+-]\d{2}:\d{2})$/i.test(value)
+        ? `${value}Z`
+        : value;
+    const parsed = new Date(normalizedValue);
     if (Number.isNaN(parsed.getTime())) return null;
     return parsed;
 }
@@ -420,11 +423,27 @@ function activateCollection(collectionId, { resetIndex = true, scrollToQuiz = fa
 }
 
 function normalizeAnswerText(value) {
-    return String(value || "")
+    const normalizedWhitespace = String(value || "")
         .toLowerCase()
-        .replace(/[\W_]+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
+        .trim()
+        .replace(/\s+/g, " ");
+
+    if (!normalizedWhitespace) return "";
+
+    return normalizedWhitespace
+        .split(" ")
+        .map((token) => {
+            // Preserve symbol-only answers like !@#$%^&*() while still ignoring wrapper punctuation.
+            if (!/[a-z0-9]/i.test(token)) return token;
+
+            const strippedToken = token
+                .replace(/^[("'`“”‘’\[{<.,!?;:]+/, "")
+                .replace(/[)"'`“”‘’\]}>.,!?;:]+$/, "");
+
+            return strippedToken || token;
+        })
+        .filter(Boolean)
+        .join(" ");
 }
 
 function answersMatch(userAnswer, expectedAnswer) {
