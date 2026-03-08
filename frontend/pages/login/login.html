@@ -18,19 +18,38 @@
 
             <div class="provider-list">
                 <button
-                    id="google-login-btn"
                     class="provider-btn provider-google"
                     data-provider="google"
                     type="button"
-                    onclick="window.__flashlearnStartGoogleAuth && window.__flashlearnStartGoogleAuth()"
                 >
-                    Continue with Google
+                    <span class="provider-icon-chip" aria-hidden="true">
+                        <svg class="provider-icon" viewBox="0 0 24 24" role="presentation">
+                            <path fill="#EA4335" d="M12 10.2v3.95h5.49c-.24 1.27-.97 2.35-2.02 3.07l3.27 2.54c1.9-1.75 3-4.33 3-7.38 0-.72-.06-1.41-.19-2.08H12z"/>
+                            <path fill="#4285F4" d="M12 22c2.7 0 4.96-.89 6.62-2.42l-3.27-2.54c-.91.61-2.07.97-3.35.97-2.57 0-4.75-1.73-5.53-4.06H3.09v2.62A9.99 9.99 0 0 0 12 22z"/>
+                            <path fill="#FBBC05" d="M6.47 13.95A5.98 5.98 0 0 1 6.16 12c0-.68.12-1.34.31-1.95V7.43H3.09A9.99 9.99 0 0 0 2 12c0 1.61.39 3.14 1.09 4.57l3.38-2.62z"/>
+                            <path fill="#34A853" d="M12 5.99c1.47 0 2.79.51 3.83 1.52l2.87-2.87C16.95 2.97 14.7 2 12 2A9.99 9.99 0 0 0 3.09 7.43l3.38 2.62c.78-2.33 2.96-4.06 5.53-4.06z"/>
+                        </svg>
+                    </span>
+                    <span class="provider-label">Continue with Google</span>
+                    <span class="provider-spacer" aria-hidden="true"></span>
                 </button>
-                <button class="provider-btn provider-soon" data-provider="apple" type="button" disabled>
-                    Discord (Coming Soon)
+                <button class="provider-btn provider-discord" data-provider="discord" type="button">
+                    <span class="provider-icon-chip" aria-hidden="true">
+                        <svg class="provider-icon" viewBox="0 0 24 24" role="presentation">
+                            <path fill="currentColor" d="M20.32 4.37A16.49 16.49 0 0 0 16.23 3c-.18.32-.4.74-.55 1.08a15.38 15.38 0 0 0-4.63 0C10.9 3.74 10.68 3.32 10.5 3a16.41 16.41 0 0 0-4.1 1.37C3.8 8.3 3.09 12.13 3.45 15.91a16.6 16.6 0 0 0 5.03 2.56c.4-.55.76-1.14 1.07-1.77-.59-.22-1.15-.5-1.68-.83.14-.1.27-.2.4-.31 3.25 1.53 6.79 1.53 10 0 .13.11.26.21.4.31-.53.33-1.09.61-1.68.83.31.63.67 1.22 1.07 1.77a16.5 16.5 0 0 0 5.03-2.56c.42-4.39-.72-8.18-2.77-11.54ZM9.85 13.59c-.98 0-1.79-.9-1.79-2.01s.79-2.01 1.79-2.01c1.01 0 1.81.9 1.79 2.01 0 1.11-.79 2.01-1.79 2.01Zm4.3 0c-.98 0-1.79-.9-1.79-2.01s.79-2.01 1.79-2.01c1.01 0 1.81.9 1.79 2.01 0 1.11-.79 2.01-1.79 2.01Z"/>
+                        </svg>
+                    </span>
+                    <span class="provider-label">Continue with Discord</span>
+                    <span class="provider-spacer" aria-hidden="true"></span>
                 </button>
-                <button class="provider-btn provider-soon" data-provider="github" type="button" disabled>
-                    GitHub (Coming Soon)
+                <button class="provider-btn provider-github" data-provider="github" type="button">
+                    <span class="provider-icon-chip" aria-hidden="true">
+                        <svg class="provider-icon" viewBox="0 0 24 24" role="presentation">
+                            <path fill="currentColor" d="M12 2C6.48 2 2 6.58 2 12.23c0 4.52 2.87 8.35 6.84 9.7.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.21-3.37-1.21-.45-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.58 2.36 1.12 2.94.86.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.15-4.56-5.11 0-1.13.39-2.05 1.03-2.78-.1-.26-.45-1.31.1-2.73 0 0 .84-.28 2.75 1.06A9.3 9.3 0 0 1 12 6.86c.85 0 1.7.12 2.5.35 1.9-1.34 2.74-1.06 2.74-1.06.55 1.42.21 2.47.1 2.73.64.73 1.03 1.65 1.03 2.78 0 3.97-2.34 4.85-4.58 5.11.36.32.68.95.68 1.92 0 1.39-.01 2.51-.01 2.85 0 .27.18.59.69.49A10.23 10.23 0 0 0 22 12.23C22 6.58 17.52 2 12 2Z"/>
+                        </svg>
+                    </span>
+                    <span class="provider-label">Continue with GitHub</span>
+                    <span class="provider-spacer" aria-hidden="true"></span>
                 </button>
             </div>
 
@@ -41,6 +60,6 @@
     </main>
 
     <script src="../../shared/js/app-core.js"></script>
-    <script type="module" src="login.js?v=4"></script>
+    <script type="module" src="login.js?v=5"></script>
 </body>
 </html>

@@ -206,7 +206,7 @@
       throw new Error("FlashLearnCore failed to load.");
     }
 
-    const { CONFIG, bootstrapSession, buildGoogleAuthorizeUrl } = core;
+    const { CONFIG, bootstrapSession } = core;
     const studyPath = "./frontend/pages/study/index.html";
     const loginNextPath = "../study/index.html";
     const loginHref = `./login.html?next=${encodeURIComponent(loginNextPath)}`;
@@ -383,7 +383,7 @@
       } else {
         heroPrimaryCta?.addEventListener("click", (event) => {
           event.preventDefault();
-          window.location.assign(buildGoogleAuthorizeUrl(studyPath));
+          window.location.assign(loginHref);
         });
       }
     } catch (error) {

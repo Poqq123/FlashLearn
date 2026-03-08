@@ -9,7 +9,7 @@ const {
     CONFIG,
     bindAuthStateListener,
     bootstrapSession,
-    buildGoogleAuthorizeUrl,
+    signInWithOAuth,
     resolveSafeNextPath,
     setStoredToken,
     setWelcomeAfterAuthFlag,
@@ -19,7 +19,6 @@ const DEFAULT_NEXT_PATH = "../study/index.html";
 const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
 const providerButtons = Array.from(document.querySelectorAll("[data-provider]"));
-const googleLoginButton = document.getElementById("google-login-btn");
 const loginNote = document.getElementById("login-note");
 const loginError = document.getElementById("login-error");
 if (!loginError) {
@@ -33,22 +32,40 @@ function redirectToNext() {
     window.location.replace(nextPath);
 }
 
-function startGoogleAuth() {
+async function startOAuth(provider, button) {
     if (loginError) loginError.textContent = "";
     setWelcomeAfterAuthFlag(true);
 
     if (window.location.protocol === "file:") {
-        const protocolMessage = "Google sign-in requires http://localhost or https://, not file://.";
+        const protocolMessage = "OAuth sign-in requires http://localhost or https://, not file://.";
         if (loginError) loginError.textContent = protocolMessage;
         return;
     }
 
     try {
-        const authorizeUrl = buildGoogleAuthorizeUrl(nextPath);
-        window.location.assign(authorizeUrl);
+        const redirectUrl = new URL(window.location.pathname, window.location.origin);
+        redirectUrl.searchParams.set("next", nextPath);
+
+        const { error } = await signInWithOAuth(supabase, provider, {
+            redirectTo: redirectUrl.toString(),
+            showWelcomeAfterAuth: true,
+        });
+        if (error) {
+            throw error;
+        }
     } catch (error) {
-        const message = error?.message || "Could not start Google sign in.";
-        if (loginError) loginError.textContent = message;
+        console.error('OAuth sign-in error:', error);
+        const message = error?.message || (typeof error === 'string' ? error : "Login failed. Please try again.");
+        const needsRedirectConfig = message.toLowerCase().includes("redirect") ||
+            message.toLowerCase().includes("invalid") ||
+            message.toLowerCase().includes("not allowed");
+        const display = needsRedirectConfig
+            ? `${message} Check Supabase Auth redirect URLs for this site origin.`
+            : message;
+        if (loginError) loginError.textContent = display;
+        if (button) {
+            button.disabled = false;
+        }
     }
 }
 
@@ -84,52 +101,14 @@ async function bootstrapLoginPage() {
 
 function wireProviderButtons() {
     providerButtons.forEach((button) => {
-        if (button.disabled) {
-            return;
-        }
-
         button.addEventListener("click", async () => {
             const provider = button.dataset.provider;
-            if (!provider || provider === "google") {
+            if (!provider) {
                 return;
             }
 
             button.disabled = true;
-            if (loginError) loginError.textContent = "";
-
-            try {
-                const redirectUrl = new URL(window.location.pathname, window.location.origin);
-                redirectUrl.searchParams.set("next", nextPath);
-
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                    provider,
-                    options: {
-                        skipBrowserRedirect: true,
-                        redirectTo: redirectUrl.toString(),
-                    },
-                });
-
-                if (error) {
-                    throw error;
-                }
-
-                if (!data?.url) {
-                    throw new Error("Could not start OAuth redirect. Please try again.");
-                }
-
-                window.location.assign(data.url);
-            } catch (error) {
-                console.error('OAuth sign-in error:', error);
-                const message = error?.message || (typeof error === 'string' ? error : "Login failed. Please try again.");
-                const needsRedirectConfig = message.toLowerCase().includes("redirect") ||
-                    message.toLowerCase().includes("invalid") ||
-                    message.toLowerCase().includes("not allowed");
-                const display = needsRedirectConfig
-                    ? `${message} Check Supabase Auth redirect URLs for this site origin.`
-                    : message;
-                if (loginError) loginError.textContent = display;
-                button.disabled = false;
-            }
+            await startOAuth(provider, button);
         });
     });
 }
@@ -146,11 +125,7 @@ bootstrapLoginPage().catch(() => {
     setStoredToken(null);
 });
 
-window.__flashlearnStartGoogleAuth = startGoogleAuth;
 if (window.location.protocol === "file:" && loginNote) {
     loginNote.textContent = "Tip: run this page from localhost to use OAuth.";
-}
-if (googleLoginButton) {
-    googleLoginButton.disabled = false;
 }
 wireProviderButtons();

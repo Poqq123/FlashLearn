@@ -137,26 +137,34 @@
         return shouldShowWelcome;
     }
 
-    function buildGoogleAuthorizeUrl(nextPath) {
+    function buildOAuthAuthorizeUrl(provider, nextPath) {
         const loginReturnUrl = new URL(nextPath, window.location.origin);
         loginReturnUrl.hash = "";
 
         const authorizeUrl = new URL(`${CONFIG.SUPABASE_URL}/auth/v1/authorize`);
-        authorizeUrl.searchParams.set("provider", "google");
+        authorizeUrl.searchParams.set("provider", provider);
         authorizeUrl.searchParams.set("redirect_to", loginReturnUrl.toString());
         return authorizeUrl.toString();
     }
 
-    async function signInWithGoogle(supabase, options = {}) {
+    function buildGoogleAuthorizeUrl(nextPath) {
+        return buildOAuthAuthorizeUrl("google", nextPath);
+    }
+
+    async function signInWithOAuth(supabase, provider, options = {}) {
         const redirectTo = options.redirectTo || `${window.location.origin}${window.location.pathname}`;
         if (options.showWelcomeAfterAuth) {
             setWelcomeAfterAuthFlag(true);
         }
         const { error } = await supabase.auth.signInWithOAuth({
-            provider: "google",
+            provider,
             options: { redirectTo },
         });
         return { error };
+    }
+
+    async function signInWithGoogle(supabase, options = {}) {
+        return signInWithOAuth(supabase, "google", options);
     }
 
     async function signOutSession(supabase, options = {}) {
@@ -276,6 +284,7 @@
     window.FlashLearnCore = Object.freeze({
         bindAuthStateListener,
         bootstrapSession,
+        buildOAuthAuthorizeUrl,
         buildGoogleAuthorizeUrl,
         CONFIG,
         clearLocationHash,
@@ -289,6 +298,7 @@
         resolveSafeNextPath,
         setWelcomeAfterAuthFlag,
         setStoredToken,
+        signInWithOAuth,
         signInWithGoogle,
         signOutSession,
         syncHeaderAvatar,
