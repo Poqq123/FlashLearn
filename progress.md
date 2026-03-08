@@ -29,3 +29,10 @@ One user said when they Put "!@#$%^&*()" as an answer, and when they inputted "!
   - syntax checks passed for `backend/app/main.py`, `frontend/pages/study/study.js`, and `frontend/pages/quiz/quiz.js`
 - Updated the homepage header auth button in `home.html` so it shows `Log In` when signed out and switches to `Profile` when signed in, while the primary CTA remains `Open Dashboard`.
 - Verified the landing-page inline script syntax by extracting it to a temp `.js` file and running `node --check`.
+- Fixed the study-page background toggle clipping by widening the control slightly and reducing/tightening the toggle label typography.
+- Replaced the logged-out header avatar state with a neutral guest avatar (`👤`) instead of reusing initials/custom presets from prior sessions.
+- Updated the account menu so signed-out users see `Home` and `Log In`, while `Log Out` stays hidden until a real session exists.
+- Verified in the browser on `frontend/pages/study/index.html` that:
+  - `Dynamic` renders without clipping in the top-left toggle
+  - the top-right button shows a guest avatar and `Open account menu` when logged out
+  - opening the menu while logged out shows `Home` and `Log In`, with no visible `Log Out`

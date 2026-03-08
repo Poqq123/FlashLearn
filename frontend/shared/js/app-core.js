@@ -253,9 +253,15 @@
         const avatarBadge = document.getElementById(avatarElementId);
         if (!avatarBadge) return;
 
-        avatarBadge.classList.remove("has-photo", "avatar-custom");
+        avatarBadge.classList.remove("has-photo", "avatar-anonymous", "avatar-custom");
         avatarBadge.style.background = "";
         avatarBadge.style.backgroundImage = "";
+
+        if (!user) {
+            avatarBadge.classList.add("avatar-anonymous");
+            avatarBadge.textContent = "👤";
+            return;
+        }
 
         const selectedPreset = localStorage.getItem(CONFIG.AVATAR_PRESET_KEY) || "google";
         if (selectedPreset !== "google" && CONFIG.AVATAR_PRESETS[selectedPreset]) {
