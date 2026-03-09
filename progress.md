@@ -36,3 +36,27 @@ One user said when they Put "!@#$%^&*()" as an answer, and when they inputted "!
   - `Dynamic` renders without clipping in the top-left toggle
   - the top-right button shows a guest avatar and `Open account menu` when logged out
   - opening the menu while logged out shows `Home` and `Log In`, with no visible `Log Out`
+- Fixed the shared background mode preference so the quiz page now reads the same `flashlearn.background.mode` value as the study page.
+- Added `storage` listeners on both pages so background mode changes propagate immediately when both pages are open.
+- Changed quiz background animation to run only when `body.dynamic-bg` is present, matching the study page behavior.
+- Verified in the browser that:
+  - setting `dynamic` on the study page causes the quiz page to load with `body.dynamic-bg`
+  - setting `static` on the quiz page causes the study page to load without `body.dynamic-bg`
+  - `node --check` passed for both `frontend/pages/study/study.js` and `frontend/pages/quiz/quiz.js`
+- Raised AI generation limits from 180 to 300 topic characters and from 10 to 15 generated cards.
+- Updated backend and frontend validation/input constraints so the AI generator stays aligned across the form and API.
+- Verified syntax for `backend/app/main.py` and `frontend/pages/study/study.js`.
+- Constrained the study-page collection sidebar height and kept the collection tree as the internal scroll container so large numbers of collections no longer stretch the whole layout.
+- Added automatic scrolling to keep the active collection/card item in view after the tree re-renders.
+- Verified in the browser that the collection tree becomes scrollable (`scrollHeight > clientHeight`) while the sidebar height remains capped.
+- Adjusted the sidebar/layout rule so the left collection panel and right flashcard panel stay the same height on desktop while the collection list still scrolls internally.
+- Re-verified in the browser with injected extra collections:
+  - sidebar height equals flashcard panel height
+  - the collection tree remains scrollable once it overflows
+- Added automatic remapping for near-white collection colors on both frontend and backend so unsafe colors like `#FFFFFF` are saved/used as a slightly darker safe value.
+- Added automatic collection-theme ink switching so light collection colors use dark text on the flashcard back.
+- Verified:
+  - `#FFFFFF` remaps to `#D4D4D4`
+  - the study-page color picker snaps to the safe remapped value
+  - the flashcard back text color becomes dark for light collection themes
+  - syntax checks passed for `backend/app/main.py` and `frontend/pages/study/study.js`
