@@ -9,6 +9,8 @@ const API_URL = CONFIG.API_URL;
 const DEFAULT_COLLECTION_COLOR = CONFIG.DEFAULT_COLLECTION_COLOR;
 const BACKGROUND_MODE_STORAGE_KEY = "flashlearn.background.mode";
 const COLLECTION_NAME_MAX_LENGTH = 60;
+const MAX_COLLECTION_COLOR_LUMINANCE = 0.84;
+const TARGET_COLLECTION_COLOR_LUMINANCE = 0.72;
 const CARD_LENGTH_LIMITS = Object.freeze({
     question: 480,
     answer: 960,
@@ -125,10 +127,60 @@ function getCollectionDisplayName(collection) {
     return collection.name;
 }
 
+function parseHexColor(color) {
+    const candidate = String(color || "").trim();
+    if (!/^#[0-9A-Fa-f]{6}$/.test(candidate)) return null;
+    return [
+        Number.parseInt(candidate.slice(1, 3), 16),
+        Number.parseInt(candidate.slice(3, 5), 16),
+        Number.parseInt(candidate.slice(5, 7), 16),
+    ];
+}
+
+function formatHexColor(r, g, b) {
+    return `#${[r, g, b].map((value) => (
+        Math.max(0, Math.min(255, Math.round(value))).toString(16).padStart(2, "0")
+    )).join("")}`.toUpperCase();
+}
+
+function getRelativeLuminance(color) {
+    const rgb = parseHexColor(color);
+    if (!rgb) return 0;
+
+    const toLinear = (channel) => {
+        const normalized = channel / 255;
+        return normalized <= 0.04045
+            ? normalized / 12.92
+            : ((normalized + 0.055) / 1.055) ** 2.4;
+    };
+
+    const [r, g, b] = rgb.map(toLinear);
+    return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+}
+
+function remapLightCollectionColor(color) {
+    let rgb = parseHexColor(color);
+    if (!rgb) return DEFAULT_COLLECTION_COLOR;
+
+    let luminance = getRelativeLuminance(formatHexColor(...rgb));
+    if (luminance <= MAX_COLLECTION_COLOR_LUMINANCE) {
+        return formatHexColor(...rgb);
+    }
+
+    let safetyCounter = 0;
+    while (luminance > TARGET_COLLECTION_COLOR_LUMINANCE && safetyCounter < 32) {
+        rgb = rgb.map((channel) => Math.round(channel * 0.94));
+        luminance = getRelativeLuminance(formatHexColor(...rgb));
+        safetyCounter += 1;
+    }
+
+    return formatHexColor(...rgb);
+}
+
 function sanitizeCollectionColor(color) {
     const candidate = (color || "").trim();
     if (!/^#[0-9A-Fa-f]{6}$/.test(candidate)) return DEFAULT_COLLECTION_COLOR;
-    return candidate.toUpperCase();
+    return remapLightCollectionColor(candidate.toUpperCase());
 }
 
 function toRgba(hexColor, alpha) {
@@ -160,10 +212,12 @@ function applyCollectionTheme(color) {
     const base = sanitizeCollectionColor(color);
     const deep = shiftHexColor(base, -0.18);
     const bright = shiftHexColor(base, 0.15);
+    const ink = getRelativeLuminance(base) > 0.52 ? "#211C15" : "#F8FBFF";
     document.documentElement.style.setProperty("--collection-color", base);
     document.documentElement.style.setProperty("--collection-color-deep", deep);
     document.documentElement.style.setProperty("--collection-color-bright", bright);
     document.documentElement.style.setProperty("--collection-soft", toRgba(base, 0.16));
+    document.documentElement.style.setProperty("--collection-ink", ink);
 }
 
 function normalizeCollectionPayload(collection) {
@@ -354,6 +408,13 @@ function setActiveCollection(nextCollection, options = {}) {
     applyActiveCollectionFilter(options);
 }
 
+function scrollActiveCollectionIntoView() {
+    if (!collectionTree) return;
+    const activeItem = collectionTree.querySelector(".collection-card-btn.is-active, .collection-folder-btn.is-active");
+    if (!activeItem || typeof activeItem.scrollIntoView !== "function") return;
+    activeItem.scrollIntoView({ block: "nearest", inline: "nearest" });
+}
+
 function renderCollectionTree() {
     if (!collectionTree) return;
 
@@ -458,6 +519,8 @@ function renderCollectionTree() {
         folderItem.appendChild(cardList);
         collectionTree.appendChild(folderItem);
     }
+
+    scrollActiveCollectionIntoView();
 }
 
 function setModalError(element, message = "") {
@@ -667,6 +730,14 @@ function setupBackgroundModeToggle() {
     const preferredMode = readBackgroundModePreference();
     applyBackgroundMode(preferredMode);
 
+    window.addEventListener("storage", (event) => {
+        if (event.key && event.key !== BACKGROUND_MODE_STORAGE_KEY) return;
+        const nextMode = event.newValue === "dynamic" || event.newValue === "static"
+            ? event.newValue
+            : readBackgroundModePreference();
+        applyBackgroundMode(nextMode);
+    });
+
     if (!backgroundToggleButton) return;
     backgroundToggleButton.addEventListener("click", () => {
         const isDynamic = document.body.classList.contains("dynamic-bg");
@@ -707,8 +778,10 @@ function setupCollectionModal() {
     collectionForm.addEventListener("submit", handleCollectionFormSubmit);
     if (collectionColorInput) {
         collectionColorInput.addEventListener("input", () => {
+            const safeColor = sanitizeCollectionColor(collectionColorInput.value);
+            collectionColorInput.value = safeColor.toLowerCase();
             if (collectionColorValue) {
-                collectionColorValue.textContent = sanitizeCollectionColor(collectionColorInput.value);
+                collectionColorValue.textContent = safeColor;
             }
         });
     }
@@ -954,11 +1027,11 @@ function validateAiGenerationInput() {
     if (!topic) {
         return { error: "Please enter a topic to generate a study set." };
     }
-    if (topic.length > 180) {
-        return { error: "Topic must be 180 characters or fewer." };
+    if (topic.length > 300) {
+        return { error: "Topic must be 300 characters or fewer." };
     }
-    if (!Number.isInteger(count) || count < 3 || count > 10) {
-        return { error: "Choose between 3 and 10 cards." };
+    if (!Number.isInteger(count) || count < 3 || count > 15) {
+        return { error: "Choose between 3 and 15 cards." };
     }
     if (collectionNameValidation.error) {
         return { error: collectionNameValidation.error };

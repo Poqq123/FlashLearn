@@ -5,6 +5,7 @@ if (!core) {
 
 const { CONFIG, getHeaders, hasValidToken } = core;
 const API_URL = CONFIG.API_URL;
+const BACKGROUND_MODE_STORAGE_KEY = "flashlearn.background.mode";
 const REVIEW_RATINGS = ["again", "easy"];
 
 let collections = [];
@@ -54,6 +55,34 @@ async function waitForAuthBootstrap() {
             console.error("Auth bootstrap failed:", error);
         }
     }
+}
+
+function readBackgroundModePreference() {
+    try {
+        const storedMode = window.localStorage.getItem(BACKGROUND_MODE_STORAGE_KEY);
+        if (storedMode === "dynamic" || storedMode === "static") {
+            return storedMode;
+        }
+    } catch (error) {
+        console.warn("Unable to read background mode preference:", error);
+    }
+    return "static";
+}
+
+function applyBackgroundMode(mode) {
+    document.body.classList.toggle("dynamic-bg", mode === "dynamic");
+}
+
+function setupBackgroundModePreference() {
+    applyBackgroundMode(readBackgroundModePreference());
+
+    window.addEventListener("storage", (event) => {
+        if (event.key && event.key !== BACKGROUND_MODE_STORAGE_KEY) return;
+        const nextMode = event.newValue === "dynamic" || event.newValue === "static"
+            ? event.newValue
+            : readBackgroundModePreference();
+        applyBackgroundMode(nextMode);
+    });
 }
 
 function toNonNegativeInteger(value, fallback = 0) {
@@ -821,6 +850,7 @@ function escapeHtml(value) {
 
 async function initializeQuizPage() {
     await waitForAuthBootstrap();
+    setupBackgroundModePreference();
     applyQueryParams();
     setupEvents();
     updateModeUI();

@@ -10,6 +10,7 @@
     --collection-color: #0f4c5c;
     --collection-color-deep: #0a3f4e;
     --collection-color-bright: #2b7081;
+    --collection-ink: #f8fbff;
     --collection-soft: rgba(15, 76, 92, 0.16);
     --accent: #bd8b3b;
     --danger: #b5442d;
@@ -542,12 +543,15 @@ body.dynamic-bg::after {
 
 .collection-tree-wrap {
     flex: 1;
+    min-height: 0;
     min-height: 280px;
     border-radius: 18px;
     border: 1px solid rgba(95, 86, 76, 0.18);
     background: rgba(255, 255, 255, 0.6);
     padding: 10px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
 }
 
 .collection-tree {
@@ -676,6 +680,11 @@ body.dynamic-bg::after {
     width: 100%;
     padding: 24px 24px 42px;
     overflow: visible;
+}
+
+.collection-sidebar,
+.flashcard-container {
+    height: clamp(520px, 72vh, 780px);
 }
 
 .active-collection {
@@ -856,7 +865,7 @@ body.dynamic-bg::after {
 .card-back {
     background:
         linear-gradient(155deg, var(--collection-color-deep) 0%, var(--collection-color) 55%, var(--collection-color-bright) 100%);
-    color: #f8fbff;
+    color: var(--collection-ink);
     transform: rotateY(180deg);
 }
 
@@ -1257,6 +1266,11 @@ button:active {
 
     .collection-sidebar {
         padding: 16px 14px;
+    }
+
+    .collection-sidebar,
+    .flashcard-container {
+        height: auto;
     }
 
     .collection-tree-wrap {

@@ -29,12 +29,14 @@ Base = declarative_base()
 DEFAULT_COLLECTION_COLOR = "#0F4C5C"
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 COLLECTION_NAME_MAX_LENGTH = 60
+MAX_COLLECTION_COLOR_LUMINANCE = 0.84
+TARGET_COLLECTION_COLOR_LUMINANCE = 0.72
 CARD_QUESTION_MAX_LENGTH = 480
 CARD_ANSWER_MAX_LENGTH = 960
-AI_TOPIC_MAX_LENGTH = 180
+AI_TOPIC_MAX_LENGTH = 300
 AI_COLLECTION_NAME_MAX_LENGTH = COLLECTION_NAME_MAX_LENGTH
 AI_GENERATED_CARD_MIN_COUNT = 3
-AI_GENERATED_CARD_MAX_COUNT = 10
+AI_GENERATED_CARD_MAX_COUNT = 15
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
 
@@ -255,7 +257,46 @@ def normalize_collection_color(color: Optional[str]) -> str:
     candidate = color.strip()
     if not HEX_COLOR_PATTERN.match(candidate):
         raise HTTPException(status_code=400, detail="Collection color must be a hex value like #0F4C5C")
-    return candidate.upper()
+    safe_color = candidate.upper()
+    if get_relative_luminance(safe_color) <= MAX_COLLECTION_COLOR_LUMINANCE:
+        return safe_color
+
+    red, green, blue = parse_hex_color(safe_color)
+    for _ in range(32):
+        red = round(red * 0.94)
+        green = round(green * 0.94)
+        blue = round(blue * 0.94)
+        safe_color = format_hex_color(red, green, blue)
+        if get_relative_luminance(safe_color) <= TARGET_COLLECTION_COLOR_LUMINANCE:
+            break
+    return safe_color
+
+
+def parse_hex_color(color: str) -> tuple[int, int, int]:
+    return (
+        int(color[1:3], 16),
+        int(color[3:5], 16),
+        int(color[5:7], 16),
+    )
+
+
+def format_hex_color(red: int, green: int, blue: int) -> str:
+    return f"#{red:02X}{green:02X}{blue:02X}"
+
+
+def get_relative_luminance(color: str) -> float:
+    red, green, blue = parse_hex_color(color)
+
+    def to_linear(channel: int) -> float:
+        normalized = channel / 255
+        if normalized <= 0.04045:
+            return normalized / 12.92
+        return ((normalized + 0.055) / 1.055) ** 2.4
+
+    linear_red = to_linear(red)
+    linear_green = to_linear(green)
+    linear_blue = to_linear(blue)
+    return (0.2126 * linear_red) + (0.7152 * linear_green) + (0.0722 * linear_blue)
 
 
 def compact_text(value: str) -> str:
