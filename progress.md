@@ -60,3 +60,16 @@ One user said when they Put "!@#$%^&*()" as an answer, and when they inputted "!
   - the study-page color picker snaps to the safe remapped value
   - the flashcard back text color becomes dark for light collection themes
   - syntax checks passed for `backend/app/main.py` and `frontend/pages/study/study.js`
+- Moved the study-page AI generate button out of absolute positioning and into a dedicated footer row inside the flashcard panel so its placement is consistent across users.
+- Verified in the browser that the button now renders in the footer flow with `position: relative` instead of `position: absolute`.
+- Refined the study-page action layout so the AI generate button now lives in the same `.actions` row as `Edit Current` and `Delete Current`, while the error message stays directly below that row.
+- Removed the leftover footer-only AI layout rules from `frontend/pages/study/study.css` and made the shared action row control button height instead.
+- Verified in the browser on `frontend/pages/study/index.html` that:
+  - `Edit Current`, `Delete Current`, and `Generate` share the exact same top position
+  - all three action buttons render at the same 46px height
+  - the error message remains below the action row instead of competing for horizontal space
+- Adjusted the desktop study-page action layout again so `Edit Current` and `Delete Current` remain centered as their original two-button group, while the AI generate button is positioned to the right on the same vertical line without shifting those two buttons horizontally.
+- Re-verified in the browser that:
+  - the edit/delete pair keeps its own centered group width
+  - the AI button sits outside that pair to the right
+  - all three buttons still share the same top position and 46px height

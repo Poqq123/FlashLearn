@@ -680,6 +680,8 @@ body.dynamic-bg::after {
     width: 100%;
     padding: 24px 24px 42px;
     overflow: visible;
+    display: flex;
+    flex-direction: column;
 }
 
 .collection-sidebar,
@@ -724,9 +726,7 @@ body.dynamic-bg::after {
 }
 
 .ai-generate-btn {
-    position: absolute;
-    right: 28px;
-    bottom: 55px;
+    position: relative;
     min-width: 120px;
     min-height: 46px;
     padding: 4px 14px 4px 7px;
@@ -931,8 +931,24 @@ button:active {
 .actions {
     display: flex;
     justify-content: center;
+    align-items: stretch;
     gap: 10px;
-    flex-wrap: wrap;
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    margin-top: 4px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.actions > button {
+    min-height: 46px;
+}
+
+.actions > .ai-generate-btn {
+    position: absolute;
+    top: 0;
+    left: calc(100% + 40px);
 }
 
 .edit-btn {
@@ -973,7 +989,9 @@ button:active {
 }
 
 .error {
-    margin-top: 10px;
+    margin: 10px 0 0;
+    min-height: 1.2em;
+    text-align: center;
     color: #9d3320;
 }
 
@@ -1407,13 +1425,15 @@ button:active {
 
     .ai-generate-btn {
         position: static;
-        width: 100%;
         min-width: 0;
-        margin-top: 18px;
         min-height: 48px;
-        justify-content: center;
         right: auto;
         bottom: auto;
+    }
+
+    .actions {
+        width: auto;
+        flex-wrap: wrap;
     }
 
     .ai-generate-label {
