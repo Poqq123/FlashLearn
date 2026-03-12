@@ -129,8 +129,8 @@ def ensure_schema() -> None:
             if "color" not in collection_columns:
                 connection.execute(text("ALTER TABLE collections ADD COLUMN color VARCHAR"))
             if "is_default" not in collection_columns:
-                connection.execute(text("ALTER TABLE collections ADD COLUMN is_default BOOLEAN DEFAULT 0"))
-            connection.execute(text("UPDATE collections SET is_default = COALESCE(is_default, 0)"))
+                connection.execute(text("ALTER TABLE collections ADD COLUMN is_default BOOLEAN DEFAULT FALSE"))
+            connection.execute(text("UPDATE collections SET is_default = COALESCE(is_default, FALSE)"))
 
 
 Base.metadata.create_all(bind=engine)
