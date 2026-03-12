@@ -132,13 +132,13 @@
                     </ul>
                 </div>
                 <select id="collection-select" onchange="onCollectionChange()" class="collection-select-hidden">
-                    <option value="all">All Collections</option>
+                    <option value="">Default</option>
                 </select>
                 <span id="collection-color-swatch" class="collection-color-swatch" title="Selected collection color"></span>
             </aside>
 
             <div class="flashcard-container">
-                <p id="active-collection" class="active-collection">Showing: All Collections</p>
+                <p id="active-collection" class="active-collection">Showing: Default</p>
                 <a href="../quiz/quiz.html" class="study-page-link">Study Mode: Open Quiz & Performance</a>
 
                 <div class="flashcard-row">
@@ -184,7 +184,7 @@
         <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="add-card-title">
             <button class="modal-close" type="button" data-close-modal="add-card-modal" aria-label="Close add card form">×</button>
             <h2 id="add-card-title">Add New Flashcard</h2>
-            <p class="modal-subtitle">Collection: <span id="add-card-collection-name">All Collections</span></p>
+            <p class="modal-subtitle">Collection: <span id="add-card-collection-name">Default</span></p>
 
             <form id="add-card-form" class="modal-form">
                 <label for="modal-question">Question</label>

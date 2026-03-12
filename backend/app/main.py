@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from jwt import InvalidTokenError, PyJWKClient
 from jwt.exceptions import PyJWKClientError
 from pydantic import BaseModel
-from sqlalchemy import Column, DateTime, Float, Integer, String, create_engine, inspect, text
+from sqlalchemy import Boolean, Column, DateTime, Float, Integer, String, create_engine, inspect, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -27,6 +27,7 @@ engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 DEFAULT_COLLECTION_COLOR = "#0F4C5C"
+DEFAULT_COLLECTION_NAME = "Default"
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9A-Fa-f]{6}$")
 COLLECTION_NAME_MAX_LENGTH = 60
 MAX_COLLECTION_COLOR_LUMINANCE = 0.84
@@ -49,6 +50,7 @@ class CollectionDB(Base):
     name = Column(String)
     class_name = Column(String, nullable=True)
     color = Column(String, nullable=True)
+    is_default = Column(Boolean, default=False, nullable=False)
 
 
 class CardDB(Base):
@@ -126,6 +128,9 @@ def ensure_schema() -> None:
             collection_columns = {column["name"] for column in inspector.get_columns("collections")}
             if "color" not in collection_columns:
                 connection.execute(text("ALTER TABLE collections ADD COLUMN color VARCHAR"))
+            if "is_default" not in collection_columns:
+                connection.execute(text("ALTER TABLE collections ADD COLUMN is_default BOOLEAN DEFAULT 0"))
+            connection.execute(text("UPDATE collections SET is_default = COALESCE(is_default, 0)"))
 
 
 Base.metadata.create_all(bind=engine)
@@ -333,6 +338,106 @@ def get_owned_collection(collection_id: int, user_id: str, db: Session) -> Colle
     if not collection:
         raise HTTPException(status_code=404, detail="Collection not found or access denied")
     return collection
+
+
+def is_default_collection(collection: Optional[CollectionDB]) -> bool:
+    return bool(collection and getattr(collection, "is_default", False))
+
+
+def serialize_collection(collection: CollectionDB) -> dict:
+    return {
+        "id": collection.id,
+        "name": collection.name,
+        "class_name": collection.class_name,
+        "color": collection.color,
+        "is_default": is_default_collection(collection),
+    }
+
+
+def ensure_default_collection(user_id: str, db: Session) -> tuple[CollectionDB, bool]:
+    changed = False
+    default_collection = (
+        db.query(CollectionDB)
+        .filter(CollectionDB.user_id == user_id, CollectionDB.is_default.is_(True))
+        .order_by(CollectionDB.id.asc())
+        .first()
+    )
+
+    if not default_collection:
+        default_collection = (
+            db.query(CollectionDB)
+            .filter(
+                CollectionDB.user_id == user_id,
+                CollectionDB.name == DEFAULT_COLLECTION_NAME,
+                CollectionDB.class_name.is_(None),
+            )
+            .order_by(CollectionDB.id.asc())
+            .first()
+        )
+        if default_collection:
+            default_collection.is_default = True
+            changed = True
+
+    if not default_collection:
+        default_collection = CollectionDB(
+            user_id=user_id,
+            name=DEFAULT_COLLECTION_NAME,
+            class_name=None,
+            color=DEFAULT_COLLECTION_COLOR,
+            is_default=True,
+        )
+        db.add(default_collection)
+        db.flush()
+        changed = True
+
+    if default_collection.name != DEFAULT_COLLECTION_NAME:
+        default_collection.name = DEFAULT_COLLECTION_NAME
+        changed = True
+    if default_collection.class_name is not None:
+        default_collection.class_name = None
+        changed = True
+
+    normalized_color = normalize_collection_color(default_collection.color)
+    if default_collection.color != normalized_color:
+        default_collection.color = normalized_color
+        changed = True
+    if not default_collection.is_default:
+        default_collection.is_default = True
+        changed = True
+
+    return default_collection, changed
+
+
+def migrate_uncategorized_cards_to_default_collection(user_id: str, default_collection_id: int, db: Session) -> bool:
+    updated_rows = (
+        db.query(CardDB)
+        .filter(CardDB.user_id == user_id, CardDB.collection_id.is_(None))
+        .update({CardDB.collection_id: default_collection_id}, synchronize_session=False)
+    )
+    return updated_rows > 0
+
+
+def prepare_user_collections(user_id: str, db: Session, *, migrate_cards: bool = False) -> CollectionDB:
+    default_collection, changed = ensure_default_collection(user_id, db)
+    if migrate_cards:
+        changed = migrate_uncategorized_cards_to_default_collection(user_id, default_collection.id, db) or changed
+    if changed:
+        db.commit()
+        db.refresh(default_collection)
+    return default_collection
+
+
+def get_sorted_user_collections(user_id: str, db: Session) -> list[CollectionDB]:
+    collections = db.query(CollectionDB).filter(CollectionDB.user_id == user_id).all()
+    return sorted(
+        collections,
+        key=lambda collection: (
+            0 if is_default_collection(collection) else 1,
+            (collection.name or "").casefold(),
+            (collection.class_name or "").casefold(),
+            collection.id,
+        ),
+    )
 
 
 def normalize_card_text(value: str, field_name: str, max_length: int) -> str:
@@ -646,12 +751,8 @@ def read_root():
 
 @app.get("/collections")
 def get_collections(user_id: str = Depends(get_current_user), db: Session = Depends(get_db)):
-    return (
-        db.query(CollectionDB)
-        .filter(CollectionDB.user_id == user_id)
-        .order_by(CollectionDB.name.asc())
-        .all()
-    )
+    prepare_user_collections(user_id, db, migrate_cards=True)
+    return [serialize_collection(collection) for collection in get_sorted_user_collections(user_id, db)]
 
 
 @app.post("/collections")
@@ -660,9 +761,13 @@ def create_collection(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    prepare_user_collections(user_id, db, migrate_cards=True)
     name = normalize_collection_name(collection.name)
     class_name = collection.class_name.strip() if collection.class_name else None
     color = normalize_collection_color(collection.color)
+
+    if name == DEFAULT_COLLECTION_NAME and class_name is None:
+        raise HTTPException(status_code=409, detail="The default collection already exists")
 
     duplicate = (
         db.query(CollectionDB)
@@ -681,13 +786,7 @@ def create_collection(
     db.commit()
     db.refresh(new_collection)
 
-    return {
-        "message": "Collection added",
-        "id": new_collection.id,
-        "name": new_collection.name,
-        "class_name": new_collection.class_name,
-        "color": new_collection.color,
-    }
+    return {"message": "Collection added", **serialize_collection(new_collection)}
 
 
 @app.put("/collections/{collection_id}")
@@ -697,7 +796,10 @@ def update_collection(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    prepare_user_collections(user_id, db, migrate_cards=True)
     owned_collection = get_owned_collection(collection_id, user_id, db)
+    if is_default_collection(owned_collection):
+        raise HTTPException(status_code=400, detail="The default collection cannot be renamed or edited")
 
     name = normalize_collection_name(collection.name)
     class_name = collection.class_name.strip() if collection.class_name else None
@@ -722,13 +824,7 @@ def update_collection(
     db.commit()
     db.refresh(owned_collection)
 
-    return {
-        "message": "Collection updated",
-        "id": owned_collection.id,
-        "name": owned_collection.name,
-        "class_name": owned_collection.class_name,
-        "color": owned_collection.color,
-    }
+    return {"message": "Collection updated", **serialize_collection(owned_collection)}
 
 
 @app.delete("/collections/{collection_id}")
@@ -737,16 +833,19 @@ def delete_collection(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    default_collection = prepare_user_collections(user_id, db, migrate_cards=True)
     collection = get_owned_collection(collection_id, user_id, db)
+    if is_default_collection(collection):
+        raise HTTPException(status_code=400, detail="The default collection cannot be deleted")
 
     db.query(CardDB).filter(
         CardDB.user_id == user_id,
         CardDB.collection_id == collection.id,
-    ).update({CardDB.collection_id: None}, synchronize_session=False)
+    ).update({CardDB.collection_id: default_collection.id}, synchronize_session=False)
 
     db.delete(collection)
     db.commit()
-    return {"message": "Collection deleted"}
+    return {"message": f'Collection deleted. Cards moved to "{DEFAULT_COLLECTION_NAME}".'}
 
 
 @app.get("/collections/{collection_id}/cards")
@@ -755,6 +854,7 @@ def get_cards_for_collection(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    prepare_user_collections(user_id, db, migrate_cards=True)
     get_owned_collection(collection_id, user_id, db)
 
     cards = (
@@ -772,6 +872,7 @@ def get_cards(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    prepare_user_collections(user_id, db, migrate_cards=True)
     cards_query = db.query(CardDB).filter(CardDB.user_id == user_id)
 
     if collection_id is not None:
@@ -790,15 +891,19 @@ def create_card(
 ):
     question = normalize_card_text(card.question, "Question", CARD_QUESTION_MAX_LENGTH)
     answer = normalize_card_text(card.answer, "Answer", CARD_ANSWER_MAX_LENGTH)
+    default_collection, default_changed = ensure_default_collection(user_id, db)
 
-    if card.collection_id is not None:
-        get_owned_collection(card.collection_id, user_id, db)
+    target_collection_id = card.collection_id
+    if target_collection_id is not None:
+        get_owned_collection(target_collection_id, user_id, db)
+    else:
+        target_collection_id = default_collection.id
 
     new_card = CardDB(
         question=question,
         answer=answer,
         user_id=user_id,
-        collection_id=card.collection_id,
+        collection_id=target_collection_id,
         review_count=0,
         correct_count=0,
         ease_factor=2.5,
@@ -809,6 +914,8 @@ def create_card(
         streak_best=0,
     )
     db.add(new_card)
+    if default_changed:
+        db.flush()
     db.commit()
     db.refresh(new_card)
     return {"message": "Card added", "id": new_card.id}
@@ -830,17 +937,24 @@ def update_card(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    prepare_user_collections(user_id, db, migrate_cards=True)
     db_card = get_owned_card(card_id, user_id, db)
 
     question = normalize_card_text(card_data.question, "Question", CARD_QUESTION_MAX_LENGTH)
     answer = normalize_card_text(card_data.answer, "Answer", CARD_ANSWER_MAX_LENGTH)
+    default_collection, default_changed = ensure_default_collection(user_id, db)
 
-    if card_data.collection_id is not None:
-        get_owned_collection(card_data.collection_id, user_id, db)
+    target_collection_id = card_data.collection_id
+    if target_collection_id is not None:
+        get_owned_collection(target_collection_id, user_id, db)
+    else:
+        target_collection_id = default_collection.id
 
     db_card.question = question
     db_card.answer = answer
-    db_card.collection_id = card_data.collection_id
+    db_card.collection_id = target_collection_id
+    if default_changed:
+        db.flush()
     db.commit()
     return {"message": "Updated"}
 
@@ -869,6 +983,7 @@ def reset_card_progress(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    prepare_user_collections(user_id, db, migrate_cards=True)
     reset_query = db.query(CardDB).filter(CardDB.user_id == user_id)
 
     if payload.collection_id is not None:

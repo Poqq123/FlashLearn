@@ -20,7 +20,7 @@ let flashcards = [];
 let allFlashcards = [];
 let collections = [];
 let currentIndex = 0;
-let activeCollection = "all";
+let activeCollection = null;
 let editingCardId = null;
 let editingCollectionId = null;
 let pendingConfirmAction = null;
@@ -116,13 +116,12 @@ async function waitForAuthBootstrap() {
 }
 
 function getSelectedCollectionId() {
-    if (activeCollection === "all") return null;
     const parsed = Number(activeCollection);
     return Number.isInteger(parsed) ? parsed : null;
 }
 
 function getCollectionDisplayName(collection) {
-    if (!collection) return "All Collections";
+    if (!collection) return "Collection";
     if (collection.class_name) return `${collection.name} (${collection.class_name})`;
     return collection.name;
 }
@@ -256,14 +255,12 @@ function normalizeCardPayload(card) {
 }
 
 function getActiveCollection() {
-    if (activeCollection === "all") return null;
     return collections.find((collection) => String(collection.id) === String(activeCollection)) || null;
 }
 
 function getFilteredCards() {
-    return activeCollection === "all"
-        ? [...allFlashcards]
-        : allFlashcards.filter((card) => String(card.collection_id) === String(activeCollection));
+    if (activeCollection === null) return [];
+    return allFlashcards.filter((card) => String(card.collection_id) === String(activeCollection));
 }
 
 function truncateCardQuestion(question) {
@@ -401,9 +398,13 @@ function applyActiveCollectionFilter({ preferredCardId = null, resetIndex = fals
 }
 
 function setActiveCollection(nextCollection, options = {}) {
-    activeCollection = String(nextCollection || "all");
+    if (nextCollection === null || nextCollection === undefined || nextCollection === "") {
+        activeCollection = collections.length ? String(collections[0].id) : null;
+    } else {
+        activeCollection = String(nextCollection);
+    }
     if (collectionSelect) {
-        collectionSelect.value = activeCollection;
+        collectionSelect.value = activeCollection || "";
     }
     applyActiveCollectionFilter(options);
 }
@@ -421,32 +422,6 @@ function renderCollectionTree() {
     const activeCardId = flashcards[currentIndex]?.id ?? null;
     collectionTree.innerHTML = "";
 
-    const allFolderItem = document.createElement("li");
-    const allButton = document.createElement("button");
-    allButton.type = "button";
-    allButton.className = `collection-folder-btn ${activeCollection === "all" ? "is-active" : ""}`;
-    allButton.addEventListener("click", () => {
-        setActiveCollection("all", { resetIndex: true });
-    });
-
-    const allDot = document.createElement("span");
-    allDot.className = "folder-dot";
-    allDot.style.background = DEFAULT_COLLECTION_COLOR;
-
-    const allName = document.createElement("span");
-    allName.className = "folder-name";
-    allName.textContent = "All Collections";
-
-    const allCount = document.createElement("span");
-    allCount.className = "folder-count";
-    allCount.textContent = String(allFlashcards.length);
-
-    allButton.appendChild(allDot);
-    allButton.appendChild(allName);
-    allButton.appendChild(allCount);
-    allFolderItem.appendChild(allButton);
-    collectionTree.appendChild(allFolderItem);
-
     if (!collections.length) {
         const empty = document.createElement("li");
         empty.className = "collection-tree-empty";
@@ -460,7 +435,7 @@ function renderCollectionTree() {
     for (const collection of collections) {
         const folderCards = allFlashcards.filter((card) => String(card.collection_id) === String(collection.id));
         const isActiveFolder = String(collection.id) === String(activeCollection);
-        const isOpen = activeCollection === "all" || isActiveFolder;
+        const isOpen = isActiveFolder;
 
         const folderItem = document.createElement("li");
 
@@ -622,8 +597,9 @@ function setupModalInfrastructure() {
 
 function updateActiveCollectionLabel() {
     if (!activeCollectionText) return;
-    if (activeCollection === "all") {
-        activeCollectionText.textContent = "Showing: All Collections";
+    const selected = getActiveCollection();
+    if (!selected) {
+        activeCollectionText.textContent = "Showing: No Collection";
         applyCollectionTheme(DEFAULT_COLLECTION_COLOR);
         if (collectionSelect) {
             collectionSelect.style.color = shiftHexColor(DEFAULT_COLLECTION_COLOR, -0.35);
@@ -631,13 +607,12 @@ function updateActiveCollectionLabel() {
         }
         if (collectionColorSwatch) {
             collectionColorSwatch.style.background = DEFAULT_COLLECTION_COLOR;
-            collectionColorSwatch.title = `All Collections color preview (${DEFAULT_COLLECTION_COLOR})`;
+            collectionColorSwatch.title = `Selected collection color (${DEFAULT_COLLECTION_COLOR})`;
         }
         updateCollectionActionButtons(null);
         return;
     }
 
-    const selected = getActiveCollection();
     activeCollectionText.textContent = `Showing: ${getCollectionDisplayName(selected)}`;
     const previewColor = selected?.color || DEFAULT_COLLECTION_COLOR;
     applyCollectionTheme(previewColor);
@@ -655,22 +630,17 @@ function updateActiveCollectionLabel() {
 function updateCollectionActionButtons(selectedCollection) {
     const canUseCollections = hasValidToken();
     const hasSelection = Boolean(selectedCollection);
-    const editDeleteDisabled = !canUseCollections || !hasSelection;
+    const editDeleteDisabled = !canUseCollections || !hasSelection || Boolean(selectedCollection?.is_default);
 
     if (editCollectionButton) editCollectionButton.disabled = editDeleteDisabled;
     if (deleteCollectionButton) deleteCollectionButton.disabled = editDeleteDisabled;
-    if (exportCollectionButton) exportCollectionButton.disabled = editDeleteDisabled;
+    if (exportCollectionButton) exportCollectionButton.disabled = !canUseCollections || !hasSelection;
     if (importCollectionButton) importCollectionButton.disabled = !canUseCollections;
 }
 
 function renderCollectionOptions() {
     if (collectionSelect) {
         collectionSelect.innerHTML = "";
-
-        const allOption = document.createElement("option");
-        allOption.value = "all";
-        allOption.textContent = "All Collections";
-        collectionSelect.appendChild(allOption);
 
         for (const collection of collections) {
             const option = document.createElement("option");
@@ -681,10 +651,10 @@ function renderCollectionOptions() {
 
         const optionExists = Array.from(collectionSelect.options).some((option) => option.value === String(activeCollection));
         if (!optionExists) {
-            activeCollection = "all";
+            activeCollection = collections.length ? String(collections[0].id) : null;
         }
 
-        collectionSelect.value = activeCollection;
+        collectionSelect.value = activeCollection || "";
     }
 
     updateActiveCollectionLabel();
@@ -1468,7 +1438,7 @@ async function handleSaveGeneratedCards() {
             throw new Error("No cards were saved.");
         }
 
-        activeCollection = targetCollection?.id ? String(targetCollection.id) : "all";
+        activeCollection = targetCollection?.id ? String(targetCollection.id) : null;
         await fetchCollections();
         await fetchFlashcards();
         closeModalById("ai-generate-modal");
@@ -1488,7 +1458,7 @@ async function handleSaveGeneratedCards() {
 async function fetchCollections() {
     if (!hasValidToken()) {
         collections = [];
-        activeCollection = "all";
+        activeCollection = null;
         renderCollectionOptions();
         return;
     }
@@ -1501,7 +1471,7 @@ async function fetchCollections() {
 
         if (response.status === 401) {
             collections = [];
-            activeCollection = "all";
+            activeCollection = null;
             renderCollectionOptions();
             return;
         }
@@ -1514,17 +1484,17 @@ async function fetchCollections() {
         collections = Array.isArray(payload) ? payload.map(normalizeCollectionPayload) : [];
 
         if (
-            activeCollection !== "all" &&
+            activeCollection !== null &&
             !collections.some((collection) => String(collection.id) === String(activeCollection))
         ) {
-            activeCollection = "all";
+            activeCollection = collections.length ? String(collections[0].id) : null;
         }
 
         renderCollectionOptions();
     } catch (error) {
         console.error("Failed to load collections:", error);
         collections = [];
-        activeCollection = "all";
+        activeCollection = null;
         renderCollectionOptions();
     }
 }
@@ -1537,6 +1507,10 @@ function openEditCollectionModal() {
     const selectedCollection = getActiveCollection();
     if (!selectedCollection) {
         showNoticeModal("Select a Collection", "Please select a collection to edit.");
+        return;
+    }
+    if (selectedCollection.is_default) {
+        showNoticeModal("Default Collection", "The default collection cannot be renamed or edited.");
         return;
     }
     openCollectionModal("edit", selectedCollection);
@@ -1641,6 +1615,10 @@ async function deleteCollection() {
         showNoticeModal("Select a Collection", "Please select a collection to delete.");
         return;
     }
+    if (selectedCollection.is_default) {
+        showNoticeModal("Default Collection", "The default collection cannot be deleted.");
+        return;
+    }
 
     if (!hasValidToken()) {
         showNoticeModal("Sign In Required", "You must be logged in to delete a collection.");
@@ -1649,7 +1627,7 @@ async function deleteCollection() {
 
     showConfirmModal({
         title: "Delete this collection?",
-        message: `Cards will remain but become uncategorized. Collection: ${getCollectionDisplayName(selectedCollection)}.`,
+        message: `Cards will move to Default. Collection: ${getCollectionDisplayName(selectedCollection)}.`,
         confirmText: "Delete Collection",
         danger: true,
         onConfirm: async () => {
@@ -1668,7 +1646,7 @@ async function deleteCollection() {
                     throw new Error(`Server error: ${response.status}`);
                 }
 
-                activeCollection = "all";
+                activeCollection = null;
                 await fetchCollections();
                 await fetchFlashcards();
             } catch (error) {
@@ -1680,7 +1658,7 @@ async function deleteCollection() {
 }
 
 function onCollectionChange() {
-    setActiveCollection(collectionSelect?.value || "all", { resetIndex: true });
+    setActiveCollection(collectionSelect?.value || collections[0]?.id || null, { resetIndex: true });
 }
 
 async function fetchFlashcards() {
@@ -1981,7 +1959,7 @@ function updateCardDisplay() {
 
     if (flashcards.length === 0) {
         renderFlashcardCopy(
-            activeCollection === "all" ? "No cards yet." : "No cards in this collection yet.",
+            "No cards in this collection yet.",
             "..."
         );
         cardIndexDisplay.textContent = "0 / 0";

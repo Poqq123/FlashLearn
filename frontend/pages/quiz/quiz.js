@@ -11,7 +11,7 @@ const REVIEW_RATINGS = ["again", "easy"];
 let collections = [];
 let allCards = [];
 let filteredCards = [];
-let activeCollection = "all";
+let activeCollection = null;
 let currentIndex = 0;
 let collectionSearchTerm = "";
 
@@ -144,9 +144,13 @@ function normalizeCardPayload(card) {
 }
 
 function getCollectionDisplayName(collection) {
-    if (!collection) return "All Collections";
+    if (!collection) return "Collection";
     if (collection.class_name) return `${collection.name} (${collection.class_name})`;
     return collection.name;
+}
+
+function getActiveCollection() {
+    return collections.find((collection) => String(collection.id) === String(activeCollection)) || null;
 }
 
 function getCardsForCollection(collectionId) {
@@ -154,9 +158,7 @@ function getCardsForCollection(collectionId) {
 }
 
 function getScopedCards() {
-    if (activeCollection === "all") {
-        return [...allCards];
-    }
+    if (activeCollection === null) return [];
     return getCardsForCollection(activeCollection);
 }
 
@@ -216,11 +218,6 @@ function renderCollectionOptions() {
     if (!collectionSelect) return;
     collectionSelect.innerHTML = "";
 
-    const allOption = document.createElement("option");
-    allOption.value = "all";
-    allOption.textContent = "All Collections";
-    collectionSelect.appendChild(allOption);
-
     for (const collection of collections) {
         const option = document.createElement("option");
         option.value = String(collection.id);
@@ -229,8 +226,8 @@ function renderCollectionOptions() {
     }
 
     const exists = Array.from(collectionSelect.options).some((option) => option.value === String(activeCollection));
-    if (!exists) activeCollection = "all";
-    collectionSelect.value = activeCollection;
+    if (!exists) activeCollection = collections.length ? String(collections[0].id) : null;
+    collectionSelect.value = activeCollection || "";
 }
 
 function updateDashboard() {
@@ -241,9 +238,7 @@ function updateDashboard() {
 }
 
 function updateModeUI() {
-    const selectedCollection = activeCollection === "all"
-        ? null
-        : collections.find((collection) => String(collection.id) === String(activeCollection)) || null;
+    const selectedCollection = getActiveCollection();
     const scopedCards = getScopedCards();
     const masteryPercent = getMasteryPercent(scopedCards);
     const scopeName = getCollectionDisplayName(selectedCollection);
@@ -257,7 +252,7 @@ function updateModeUI() {
     }
 
     if (collectionSelect) {
-        collectionSelect.value = activeCollection;
+        collectionSelect.value = activeCollection || "";
     }
 }
 
@@ -292,9 +287,7 @@ function renderCard() {
 
     if (!filteredCards.length) {
         if (questionElement) {
-            questionElement.textContent = activeCollection === "all"
-                ? "No cards available yet."
-                : "No cards in this collection yet.";
+            questionElement.textContent = "No cards in this collection yet.";
         }
         if (answerElement) {
             answerElement.textContent = "Add cards from the main page and return here.";
@@ -437,9 +430,9 @@ function applyFilters({ preferredCardId = null, resetIndex = false } = {}) {
 }
 
 function activateCollection(collectionId, { resetIndex = true, scrollToQuiz = false } = {}) {
-    activeCollection = collectionId || "all";
+    activeCollection = collectionId ? String(collectionId) : (collections.length ? String(collections[0].id) : null);
     if (collectionSelect) {
-        collectionSelect.value = activeCollection;
+        collectionSelect.value = activeCollection || "";
     }
     applyFilters({ resetIndex });
     setStatus("");
@@ -516,7 +509,7 @@ function prevCard() {
 async function fetchCollections() {
     if (!hasValidToken()) {
         collections = [];
-        activeCollection = "all";
+        activeCollection = null;
         renderCollectionOptions();
         applyFilters({ resetIndex: true });
         return;
@@ -530,7 +523,7 @@ async function fetchCollections() {
 
         if (response.status === 401) {
             collections = [];
-            activeCollection = "all";
+            activeCollection = null;
             renderCollectionOptions();
             applyFilters({ resetIndex: true });
             return;
@@ -542,12 +535,15 @@ async function fetchCollections() {
 
         const payload = await response.json();
         collections = Array.isArray(payload) ? payload : [];
+        if (!collections.some((collection) => String(collection.id) === String(activeCollection))) {
+            activeCollection = collections.length ? String(collections[0].id) : null;
+        }
         renderCollectionOptions();
     } catch (error) {
         console.error("Failed to load collections:", error);
         setStatus("Could not load collections.", "error");
         collections = [];
-        activeCollection = "all";
+        activeCollection = null;
         renderCollectionOptions();
     }
 }
@@ -651,13 +647,11 @@ async function resetProgressStats() {
         return;
     }
 
-    const selectedCollection = activeCollection === "all"
-        ? null
-        : collections.find((collection) => String(collection.id) === String(activeCollection)) || null;
-    const scopeLabel = selectedCollection ? getCollectionDisplayName(selectedCollection) : "all collections";
-    const selectedCollectionId = activeCollection === "all" ? null : Number.parseInt(activeCollection, 10);
+    const selectedCollection = getActiveCollection();
+    const scopeLabel = getCollectionDisplayName(selectedCollection);
+    const selectedCollectionId = Number.parseInt(activeCollection || "", 10);
 
-    if (activeCollection !== "all" && !Number.isInteger(selectedCollectionId)) {
+    if (!Number.isInteger(selectedCollectionId)) {
         setStatus("Invalid collection scope. Please reselect the collection.", "error");
         return;
     }
@@ -770,7 +764,7 @@ async function handleAnswerSubmit(event) {
 function setupEvents() {
     if (collectionSelect) {
         collectionSelect.addEventListener("change", () => {
-            activateCollection(collectionSelect.value || "all", { resetIndex: true });
+            activateCollection(collectionSelect.value || collections[0]?.id || null, { resetIndex: true });
         });
     }
 

@@ -124,9 +124,13 @@ function renderCollectionHeader() {
 
     if (titleElement) titleElement.textContent = title;
     if (subtitleElement) {
-        subtitleElement.textContent = className
-            ? `Key terms and definitions for ${className}`
-            : "Key terms and definitions for this collection";
+        if (activeCollection.is_default) {
+            subtitleElement.textContent = "Your default study set for quick-add and reassigned cards.";
+        } else {
+            subtitleElement.textContent = className
+                ? `Key terms and definitions for ${className}`
+                : "Key terms and definitions for this collection";
+        }
     }
     if (cardCountElement) {
         const countLabel = cards.length === 1 ? "1 card" : `${cards.length} cards`;
@@ -137,6 +141,12 @@ function renderCollectionHeader() {
     }
     if (masteryValueElement) masteryValueElement.textContent = `${masteryPercent}%`;
     if (masteryFillElement) masteryFillElement.style.width = `${masteryPercent}%`;
+    if (deleteSetButton) {
+        deleteSetButton.disabled = Boolean(activeCollection.is_default);
+        deleteSetButton.title = activeCollection.is_default
+            ? "The default collection cannot be deleted."
+            : "";
+    }
 }
 
 function openConfirmModal() {
@@ -213,6 +223,10 @@ function setupActions() {
                 setStatus("Collection is not loaded yet.", "error");
                 return;
             }
+            if (activeCollection.is_default) {
+                setStatus("The default collection cannot be deleted.", "error");
+                return;
+            }
 
             pendingDeleteAction = async () => {
                 try {
@@ -229,7 +243,7 @@ function setupActions() {
                         throw new Error(`Delete failed (HTTP ${response.status}).`);
                     }
 
-                    setStatus("Collection deleted.", "success");
+                    setStatus("Collection deleted. Cards moved to Default.", "success");
                     setTimeout(() => {
                         window.location.href = "./quiz.html";
                     }, 300);

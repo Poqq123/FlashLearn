@@ -1,67 +1,31 @@
 # FlashLearn
 
-FlashLearn is a flashcard study app with a static multi-page frontend and a FastAPI backend. The current project supports Google sign-in through Supabase, collection-based card management, quiz and study-session flows, profile settings, JSON import/export, and AI-assisted flashcard drafting with Gemini.
+FlashLearn is a flashcard study application with a static multi-page frontend and a FastAPI backend. It helps students organize cards into collections, study them in a focused card view, review performance in quiz mode, and generate draft flashcards with AI. Authentication is handled through Supabase OAuth, and the backend stores user data and review progress in PostgreSQL.
 
-## Current Status
+## Project Summary
 
-- Frontend is a static site organized under `frontend/pages/*`.
-- Backend is a FastAPI app in `backend/app/main.py`.
-- Auth is handled by Supabase on the frontend and verified on the backend with bearer tokens.
-- Data is stored in Postgres via SQLAlchemy, intended for Supabase Postgres.
-- The app is currently shaped for a split deployment:
-  - Static frontend (for example GitHub Pages)
-  - FastAPI backend (for example Render)
-  - Supabase Auth + Postgres
+The final project includes:
 
-## What Ships Today
+- A landing page and redirect entry page for signed-in and signed-out users
+- Supabase OAuth login with Google, Discord, and GitHub provider options
+- A study dashboard for creating, editing, deleting, browsing, and filtering flashcards
+- Collection management with optional class name, collection color, and JSON import/export
+- AI-assisted flashcard drafting through the Gemini API
+- A quiz dashboard with collection search, typed answer checking, mastery statistics, and progress reset
+- A collection detail page with mastery overview and a link into a focused study session
+- A focused study-session page with card flipping and review actions
+- A profile page with account details, flashcard totals, and avatar preset selection
+- A protected FastAPI backend for collections, cards, review tracking, progress reset, and AI generation
 
-### Public / shell pages
+## Main Technologies
 
-- `index.html`
-  - Entry page that redirects signed-in users to the study app and signed-out users to the marketing home page.
-- `home.html`
-  - Marketing / landing page.
-- `login.html`, `profile.html`, `quiz.html`
-  - Thin redirect shims to the real pages under `frontend/pages/...`.
+- Frontend: HTML, CSS, JavaScript
+- Backend: FastAPI, SQLAlchemy
+- Authentication: Supabase Auth
+- Database: PostgreSQL
+- AI generation: Gemini API
 
-### Frontend app pages
-
-- `frontend/pages/login/login.html`
-  - OAuth login flow using Supabase.
-- `frontend/pages/study/index.html`
-  - Main study dashboard.
-  - Create, edit, delete, and browse flashcards.
-  - Create, edit, delete, color, and filter collections.
-  - Import/export collections as JSON.
-  - Generate draft flashcards with Gemini, preview them, and save them into a collection.
-  - Toggle static vs dynamic background treatment.
-- `frontend/pages/quiz/quiz.html`
-  - Quiz dashboard with collection search, scope switching, typed answer checking, and progress stats.
-- `frontend/pages/quiz/collection.html`
-  - Collection detail page with mastery snapshot and launch point for focused study.
-- `frontend/pages/quiz/study-session.html`
-  - Dedicated focused review session for one collection with `again` / `easy` review actions.
-- `frontend/pages/profile/profile.html`
-  - Profile page showing user info, member date, total flashcards, and local avatar preset selection.
-
-### Backend behavior
-
-- Protected API with Supabase bearer token validation.
-- Supports both:
-  - HS256 verification via `SUPABASE_JWT_SECRET`
-  - JWKS-based verification via `SUPABASE_URL`
-- Startup schema guard keeps older databases usable by adding missing columns and indexes.
-- Review data is stored per card:
-  - `review_count`
-  - `correct_count`
-  - `ease_factor`
-  - `interval_days`
-  - `due_at`
-  - `last_reviewed_at`
-  - `streak_current`
-  - `streak_best`
-
-## Project Layout
+## Repository Layout
 
 ```text
 .
@@ -72,72 +36,50 @@ FlashLearn is a flashcard study app with a static multi-page frontend and a Fast
 ├── frontend/pages/study/          # Main flashcard dashboard
 ├── frontend/pages/quiz/           # Quiz, collection, and study-session pages
 ├── frontend/pages/profile/        # Profile page
-├── frontend/pages/home/           # Home page styles
 ├── home.html                      # Landing page
 ├── index.html                     # Entry redirect page
-└── .env.example                   # Backend env template
+├── README.TXT                     # Submission-style text version
+└── TestResults/                   # Testing summary and support files
 ```
 
-## Backend API
+## Features
 
-All endpoints except `GET /` require `Authorization: Bearer <token>`.
+### Frontend Pages
 
-### Health
+- `index.html`
+  - Redirects signed-in users toward the app and signed-out users to the landing page
+- `home.html`
+  - Marketing / landing page
+- `frontend/pages/login/login.html`
+  - OAuth sign-in page
+- `frontend/pages/study/index.html`
+  - Main study dashboard
+  - Card creation, editing, deletion, and browsing
+  - Collection creation, editing, deletion, filtering, import, and export
+  - AI flashcard drafting and save flow
+- `frontend/pages/quiz/quiz.html`
+  - Quiz dashboard with collection filtering, progress statistics, and typed answer checking
+- `frontend/pages/quiz/collection.html`
+  - Collection detail page with mastery snapshot
+- `frontend/pages/quiz/study-session.html`
+  - Focused study session with review actions
+- `frontend/pages/profile/profile.html`
+  - Profile page with account information, member date, total flashcards, and avatar presets
 
-- `GET /`
-  - Returns API status.
+### Backend Behavior
 
-### Collections
+- Protected API with Supabase bearer-token validation
+- Collection CRUD endpoints
+- Card CRUD endpoints
+- Card review tracking with progress metrics
+- Progress reset endpoint
+- AI card generation endpoint
+- Schema backfill on startup to keep older databases usable
 
-- `GET /collections`
-- `POST /collections`
-  - Body: `name`, optional `class_name`, optional `color`
-- `PUT /collections/{collection_id}`
-- `DELETE /collections/{collection_id}`
-  - Unassigns cards in that collection before deleting it.
-- `GET /collections/{collection_id}/cards`
+### Card Progress Data
 
-### Cards
+Each flashcard can store:
 
-- `GET /cards`
-- `GET /cards?collection_id=<id>`
-- `POST /cards`
-  - Body: `question`, `answer`, optional `collection_id`
-- `PUT /cards/{card_id}`
-- `DELETE /cards/{card_id}`
-- `POST /cards/{card_id}/review`
-  - Body: `rating`
-  - Supported backend ratings: `again`, `hard`, `good`, `easy`
-- `POST /cards/reset-progress`
-  - Body: optional `collection_id`
-
-### AI
-
-- `POST /ai/generate-cards`
-  - Body: `topic`, `count`, optional `collection_name`
-  - Requires `GEMINI_API_KEY`
-  - Current limits:
-    - topic max length: `180`
-    - collection name max length: `60`
-    - generated card count: `3-10`
-
-## Data Model
-
-### `collections`
-
-- `id`
-- `user_id`
-- `name`
-- `class_name`
-- `color`
-
-### `flashcards`
-
-- `id`
-- `user_id`
-- `question`
-- `answer`
-- `collection_id`
 - `review_count`
 - `correct_count`
 - `ease_factor`
@@ -147,21 +89,38 @@ All endpoints except `GET /` require `Authorization: Bearer <token>`.
 - `streak_current`
 - `streak_best`
 
-## Local Development
+## How to Run the Program
 
-### 1. Install backend dependencies
+### Option 1: Use the deployed version
+
+Open the live app:
+
+[FlashLearn](https://poqq123.github.io/FlashLearn)
+
+### Option 2: Run locally
+
+#### Prerequisites
+
+- Python 3.9 or newer
+- A PostgreSQL database
+- A Supabase project
+- Internet access for OAuth and AI generation
+
+#### 1. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Create backend env file
+#### 2. Create the environment file
 
 ```bash
 cp .env.example .env
 ```
 
-Set the values in `.env`:
+#### 3. Configure environment variables
+
+Fill in these values in `.env`:
 
 - `DATABASE_URL`
 - `SUPABASE_URL`
@@ -173,54 +132,70 @@ Set the values in `.env`:
 
 Notes:
 
-- `SUPABASE_ANON_KEY` is used by the frontend, not the FastAPI server directly.
-- If your Supabase project signs JWTs with asymmetric keys, backend verification can use JWKS via `SUPABASE_URL`.
-- If your Supabase project signs JWTs with HS256, `SUPABASE_JWT_SECRET` must be set.
+- `DATABASE_URL` should point to your PostgreSQL database
+- `SUPABASE_URL` and `SUPABASE_ANON_KEY` must match the frontend project configuration
+- `SUPABASE_JWT_SECRET` is required for HS256 token verification
+- `GEMINI_API_KEY` is required only for AI card generation
 
-### 3. Update frontend runtime config
+#### 4. Update frontend runtime config
 
-The frontend currently reads its runtime config from:
+The frontend runtime config is in:
 
-- `frontend/shared/js/app-core.js`
+`frontend/shared/js/app-core.js`
 
-That file currently contains hardcoded values for:
+Update these values if you are not using the existing deployed services:
 
 - `API_URL`
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 
-If you are running against your own backend or Supabase project, update those values there.
-
-### 4. Run the backend
+#### 5. Start the backend
 
 ```bash
 uvicorn main:app --reload --env-file .env
 ```
 
-### 5. Serve the frontend over HTTP
+Backend default URL:
 
-Do not open the app from `file://`. Use a local static server instead.
+- `http://127.0.0.1:8000`
 
-Example:
+#### 6. Serve the frontend
+
+Do not open the app from `file://`.
 
 ```bash
 python3 -m http.server 4173
 ```
 
-Then open:
+#### 7. Open the app
 
-- `http://localhost:4173/index.html`
+Open:
 
-## Deployment Notes
+- `http://127.0.0.1:4173/index.html`
 
-- Use the Supabase connection pooling URL for `DATABASE_URL`.
-- Include `?sslmode=require` in `DATABASE_URL`.
-- The backend expects Postgres schema changes to be additive; `ensure_schema()` patches missing columns/indexes on startup.
-- The frontend and backend are deployed separately in the current project shape.
+Useful local URLs:
 
-## Important Implementation Notes
+- Landing page: `http://127.0.0.1:4173/home.html`
+- Login page: `http://127.0.0.1:4173/frontend/pages/login/login.html`
+- Study page: `http://127.0.0.1:4173/frontend/pages/study/index.html`
+- Quiz page: `http://127.0.0.1:4173/frontend/pages/quiz/quiz.html`
+- Profile page: `http://127.0.0.1:4173/frontend/pages/profile/profile.html`
 
-- `main.py` only re-exports the FastAPI app from `backend/app/main.py` for compatibility with existing `uvicorn main:app` commands.
-- `frontend/shared/js/app-core.js` is the central frontend config/auth helper.
-- The quiz and study-session UIs currently use simplified review actions even though the backend supports all four spaced-repetition ratings.
-- `requirements.txt` currently includes more packages than the strict backend runtime needs; it reflects the project environment as it exists now.
+## Testing
+
+The formatted testing documents are in [`TestResults/`](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults):
+
+- [TestSummary.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/TestSummary.md)
+- [KnownIssues.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/KnownIssues.md)
+- [AutomatedTestRunResults.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/AutomatedTestRunResults.md)
+- [ManualTests.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/ManualTests.md)
+- [UserTestingNotes.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/UserTestingNotes.md)
+
+Plain-text copies are still present for submission compatibility with the original assignment wording.
+
+## Important Notes
+
+- The frontend is static and the backend is deployed separately in the current project setup
+- The frontend runtime currently stores service values directly in `app-core.js`
+- AI card generation will fail unless the backend has a valid Gemini API key
+- Signed-in features require a working Supabase Auth configuration and a reachable backend API
