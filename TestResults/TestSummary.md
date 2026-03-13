@@ -36,9 +36,9 @@ Last updated: March 12, 2026
 
 ### 6. Manual browser smoke testing
 
-- Most recent run: March 10, 2026
+- Most recent run: March 13, 2026
 - Result: PASS
-- Summary: The landing page, entry redirect, login page, study page shell, and quiz page shell loaded successfully from a local static server.
+- Summary: Manual testing passed for core user flows including landing/login pages, collection CRUD, flashcard CRUD, static/dynamic background toggle, AI flashcard generation, avatar customization, import/export, quiz answer checking, and focused study-session actions.
 
 ### 7. User testing notes
 
@@ -47,8 +47,8 @@ Last updated: March 12, 2026
 - Summary: Bug-bash/user-testing results were documented from 35 FlashLearn reports across 16 testers, with the biggest issue areas being signed-out state clarity, text overflow, quiz feedback, import/export clarity, and color visibility.
 
 ## Supporting Documents
-- [Green-Bug-Bash/xlsx](./Green-Bug-Bash.xlsx)
-- [KnownIssues.md](./KnownIssues.md)
 - [AutomatedTestRunResults.md](./AutomatedTestRunResults.md)
+- [GreenBugBash.xlsx](./GreenBugBash.xlsx)
+- [KnownIssues.md](./KnownIssues.md)
 - [ManualTests.md](./ManualTests.md)
 - [UserTestingNotes.md](./UserTestingNotes.md)
