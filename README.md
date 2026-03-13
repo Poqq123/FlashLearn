@@ -62,82 +62,92 @@ Open the live app:
 - A PostgreSQL database
 - A Supabase project
 - Internet access for OAuth and AI generation
+- Git
 
-#### 1. Install dependencies
+#### 1. Clone the repository
+
+Open your terminal, clone the repo to your local machine, and enter the project folder.
+
+```bash
+git clone https://github.com/Poqq123/FlashLearn.git
+cd FlashLearn
+```
+
+#### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 2. Create the environment file
+#### 3. Create the environment file
 
 ```bash
 cp .env.example .env
 ```
 
-#### 3. Configure environment variables
+#### 4. Configure environment variables
 
-Fill in these values in `.env`:
+Open your new `.env` file and fill in the required values. You need to set up your own Supabase project. You can find the keys in these specific dashboard locations:
 
-- `DATABASE_URL`
-- `SUPABASE_URL`
-- `SUPABASE_JWT_SECRET`
-- `SUPABASE_JWT_ISSUER`
-- `SUPABASE_ANON_KEY`
-- `GEMINI_API_KEY`
-- `GEMINI_MODEL`
+- **`DATABASE_URL`**: Found at *Connect -> Connection String -> Method -> Session pooler* (Must point to your PostgreSQL database).
+  
+- **`SUPABASE_URL`**: Found at *Connect -> App Frameworks*.
+  
+- **`SUPABASE_ANON_KEY`**: Found at *Project Settings -> API Keys -> Legacy anon, service_role API Keys Tab*.
+  
+- **`SUPABASE_JWT_SECRET`**: Found at *Project Settings -> JWT Keys* (Required for HS256 token verification).
+  
+- **`SUPABASE_JWT_ISSUER`**: Enter your issuer URL.
+  
+- **`GEMINI_API_KEY`**: Required only for AI card generation.
+  
+- **`GEMINI_MODEL`**: Enter your target Gemini model name.
+  
 
-Notes:
+#### 5. Update frontend runtime config
 
-- `DATABASE_URL` should point to your PostgreSQL database
-- `SUPABASE_URL` and `SUPABASE_ANON_KEY` must match the frontend project configuration
-- `SUPABASE_JWT_SECRET` is required for HS256 token verification
-- `GEMINI_API_KEY` is required only for AI card generation
+The frontend runtime config is in: `frontend/shared/js/app-core.js`
 
-#### 4. Update frontend runtime config
-
-The frontend runtime config is in:
-
-`frontend/shared/js/app-core.js`
-
-Update these values if you are not using the existing deployed services:
+Update the following values to match your local `.env` setup if you are not using the existing deployed services:
 
 - `API_URL`
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 
-#### 5. Start the backend
+#### 6. Start the backend
+
+Run the backend server using `Uvicorn` in your current terminal:
 
 ```bash
 uvicorn main:app --reload --env-file .env
 ```
 
-Backend default URL:
+(The backend defaults to using the URL: `http://127.0.0.1:8000`, Though your terminal will specify this)
 
-- `http://127.0.0.1:8000`
+#### 7. Serve the frontend
 
-#### 6. Serve the frontend
-
-Do not open the app from `file://`.
+**Important:** Do not open the app from `file://`.
 
 ```bash
 python3 -m http.server 4173
 ```
 
-#### 7. Open the app
+#### 8. Open the app
 
-Open:
+Access the server in your browser at: **`http://127.0.0.1:4173/index.html`** (Use whatever local IP & Port your terminal shows)
 
-- `http://127.0.0.1:4173/index.html`
-
-Useful local URLs:
+**Useful local URLs (Update the IP and Port With What your Terminal Displays):**
 
 - Landing page: `http://127.0.0.1:4173/home.html`
+  
 - Login page: `http://127.0.0.1:4173/frontend/pages/login/login.html`
+  
 - Study page: `http://127.0.0.1:4173/frontend/pages/study/index.html`
+  
 - Quiz page: `http://127.0.0.1:4173/frontend/pages/quiz/quiz.html`
+  
 - Profile page: `http://127.0.0.1:4173/frontend/pages/profile/profile.html`
-
+  
 
 ## Important Notes
 
@@ -148,4 +158,6 @@ Useful local URLs:
 
 ## Project Credits
 
-Primary implementation, testing, documentation, and release preparation by `Andy`.
+- **Andy:** Completed the primary implementation of the application. Built the frontend and backend logic, configured the Supabase/PostgreSQL database, wrote the automated tests, handed the final GitHub/Render deployments, and completed documentation.
+  
+- **Bhargav:** Worked on release documentation. Conducted independent bug bashes to report issues. Worked on Initial prototyping to migrate to react, which was later scrapped.
