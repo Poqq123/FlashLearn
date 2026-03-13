@@ -46,23 +46,6 @@ FlashLearn is built to help students organize study material and review it in mu
 - Database: PostgreSQL
 - AI generation: Gemini API
 
-## Repository Layout
-
-```text
-.
-├── backend/app/main.py            # Main FastAPI application
-├── main.py                        # Compatibility entrypoint for uvicorn
-├── frontend/shared/js/app-core.js # Frontend runtime config and auth helpers
-├── frontend/pages/login/          # Login page
-├── frontend/pages/study/          # Main flashcard dashboard
-├── frontend/pages/quiz/           # Quiz, collection, and study-session pages
-├── frontend/pages/profile/        # Profile page
-├── home.html                      # Landing page
-├── index.html                     # Entry redirect page
-├── README.TXT                     # Submission-style text version
-└── TestResults/                   # Testing summary and support files
-```
-
 ## How to Run the Program
 
 ### Option 1: Use the deployed version
