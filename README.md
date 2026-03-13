@@ -4,18 +4,39 @@ FlashLearn is a flashcard study application with a static multi-page frontend an
 
 ## Project Summary
 
-The final project includes:
+FlashLearn is built to help students organize study material and review it in multiple ways. After signing in, users can build their own flashcard sets, group cards into collections, generate flashcard sets with Gemini, practice in a normal study view, switch into quiz mode to check recall, and track progress over time.
 
-- A landing page and redirect entry page for signed-in and signed-out users
-- Supabase OAuth login with Google, Discord, and GitHub provider options
-- A study dashboard for creating, editing, deleting, browsing, and filtering flashcards
-- Collection management with optional class name, collection color, and JSON import/export
-- AI-assisted flashcard drafting through the Gemini API
-- A quiz dashboard with collection search, typed answer checking, mastery statistics, and progress reset
-- A collection detail page with mastery overview and a link into a focused study session
-- A focused study-session page with card flipping and review actions
-- A profile page with account details, flashcard totals, and avatar preset selection
-- A protected FastAPI backend for collections, cards, review tracking, progress reset, and AI generation
+## What Users Can Do
+
+- AI flashcard set generation (min: 3 cards, max: 15 cards)
+- AI-generated flashcard preview
+- AI-generated flashcard saving
+- Assign flashcards to a specific collection
+- Authentication via Google/GitHub/Discord OAuth providers
+- Avatar (profile picture) customization with preset choices
+- Collection color customization
+- Collection detail page
+- Create/Edit/Delete flashcard collections
+- Create/Edit/Delete flashcards
+- Deleting a collection preserves flashcards by unassigning them
+- Display flashcards/collections
+- Filter study sessions by all cards or a selected collection
+- Flip the flashcard to show the answer or the question
+- Focused study session with Still Learning and Got It review actions
+- Header profile menu for quick profile access and logout
+- Homepage with information and dynamic image
+- Import/Export collections as JSON file
+- Move to previous or next flashcard
+- Optional class name for collections
+- Profile page that shows account info (name, email, member since, total flashcards)
+- Quiz mode statistics (Total cards, total sets, average mastery, reviewed today)
+- Quiz mode that allows you to evaluate your knowledge of a collection
+- Reset progress stats for all cards or the currently selected collection
+- Scrollable sidebar with collections and flashcards
+- Search collections on the quiz page and focus on a specific set
+- Stay logged in across sessions
+- Study session completion summary with mastery percentage
+- Switch between static and dynamic background
 
 ## Main Technologies
 
@@ -41,53 +62,6 @@ The final project includes:
 ├── README.TXT                     # Submission-style text version
 └── TestResults/                   # Testing summary and support files
 ```
-
-## Features
-
-### Frontend Pages
-
-- `index.html`
-  - Redirects signed-in users toward the app and signed-out users to the landing page
-- `home.html`
-  - Marketing / landing page
-- `frontend/pages/login/login.html`
-  - OAuth sign-in page
-- `frontend/pages/study/index.html`
-  - Main study dashboard
-  - Card creation, editing, deletion, and browsing
-  - Collection creation, editing, deletion, filtering, import, and export
-  - AI flashcard drafting and save flow
-- `frontend/pages/quiz/quiz.html`
-  - Quiz dashboard with collection filtering, progress statistics, and typed answer checking
-- `frontend/pages/quiz/collection.html`
-  - Collection detail page with mastery snapshot
-- `frontend/pages/quiz/study-session.html`
-  - Focused study session with review actions
-- `frontend/pages/profile/profile.html`
-  - Profile page with account information, member date, total flashcards, and avatar presets
-
-### Backend Behavior
-
-- Protected API with Supabase bearer-token validation
-- Collection CRUD endpoints
-- Card CRUD endpoints
-- Card review tracking with progress metrics
-- Progress reset endpoint
-- AI card generation endpoint
-- Schema backfill on startup to keep older databases usable
-
-### Card Progress Data
-
-Each flashcard can store:
-
-- `review_count`
-- `correct_count`
-- `ease_factor`
-- `interval_days`
-- `due_at`
-- `last_reviewed_at`
-- `streak_current`
-- `streak_best`
 
 ## How to Run the Program
 
@@ -181,17 +155,6 @@ Useful local URLs:
 - Quiz page: `http://127.0.0.1:4173/frontend/pages/quiz/quiz.html`
 - Profile page: `http://127.0.0.1:4173/frontend/pages/profile/profile.html`
 
-## Testing
-
-The formatted testing documents are in [`TestResults/`](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults):
-
-- [TestSummary.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/TestSummary.md)
-- [KnownIssues.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/KnownIssues.md)
-- [AutomatedTestRunResults.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/AutomatedTestRunResults.md)
-- [ManualTests.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/ManualTests.md)
-- [UserTestingNotes.md](/Users/GeneralUse/LinuxHome/FlashcardTest/TestResults/UserTestingNotes.md)
-
-Plain-text copies are still present for submission compatibility with the original assignment wording.
 
 ## Important Notes
 
@@ -199,3 +162,7 @@ Plain-text copies are still present for submission compatibility with the origin
 - The frontend runtime currently stores service values directly in `app-core.js`
 - AI card generation will fail unless the backend has a valid Gemini API key
 - Signed-in features require a working Supabase Auth configuration and a reachable backend API
+
+## Project Credits
+
+Primary implementation, testing, documentation, and release preparation by `Andy`.
